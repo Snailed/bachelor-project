@@ -29,7 +29,7 @@ We will use this in the following operation:
 This operation isolates the segments indicated by the bit-mask starting from the $k$th position of the word $w$.
 The algorithm to calculate the cardinality can then be described like in algorithm \ref{alg:divide-and-conquer-cardinality}
 \begin{algorithm}[H]
-\caption{A Divide-and-Conquer approach}\label{alg:divide-and-conquer-cardinality}
+\caption{A divide-and-conquer approach}\label{alg:divide-and-conquer-cardinality}
 \begin{algorithmic}
 \Function{Cardinality}{$w$, $d$} \Comment{$w$ is the input word, $d$ is the word-size}
 \State $i \gets 0$
@@ -62,4 +62,35 @@ To introduce parallelism into the algorithm, we must first realize the following
     If it is true at iteration $i$, then at iteration $i+1$ the algorithm will add two words of size $i+1$ which creates a word of size $i+2$, which fulfills the loop invariant.
 \end{proof}
 Now, we will introduce a function $l(i)$, which produces the smallest number such that $2^{l(i)} \geq i + 2$. If we use the bit mask $m_{l(i), i+1}$ instead of $m_{i}$, we will get the same result. This also means that we can pack $2^{i-l(i)}$ words into one by utilizing the empty space in each segment.
-
+\begin{algorithm}[H]
+\caption{A parallel divide-and-conquer algorithm}\label{alg:parallel-d-and-c}
+    \begin{algorithmic}
+        \Function{Compute}{$S$, $d$} \Comment{$S$ is the input set, $d$ is the word-size}
+            \State $n \gets S.length$
+            \For{$i \in [d]$}
+                \State $k' \gets \{\}$
+                \State $t \gets \{\}$
+                \For{$w \in S$}
+                    \State $k' \gets k' \cup \{T(w, m_i, 0) + T(w, m_i, 2^i)\}$
+                \EndFor
+                \If{$l(i) = l(i+1)$}
+                    \For{$j \in [\lceil S.length / 2 \rceil]$}
+                        \State $t \gets t \cup \{k'_{2j} + (k'_{2j+1} \ll 2^i)\}$
+                    \EndFor
+                \Else
+                    \For{$j \in k'$}
+                        \State $t \gets t \cup \{T(k'_{j}, m_{l(i)}, 0) + (T(k'_{j}, m_{l(i)}, 2^{l(i)}) \ll 2^{i})\}$
+                    \EndFor
+                \EndIf
+                \State $S \gets t$
+            \EndFor
+            \State $S' \gets \{\}$
+            \For{$j$ in $[S.length]$}
+                \For{$k$ in $[\log_2(d)]$} % TODO: Research this!
+                \State $S' \gets S' \cup \{T(k_j, m_{l(\log_2(d)), \log_2(d) + 1}, k\cdot 2^{l(\log_2(d))})\}$
+                \EndFor
+            \EndFor
+            \State \Return $S'$
+        \EndFunction
+    \end{algorithmic}
+\end{algorithm}
