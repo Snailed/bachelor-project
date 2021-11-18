@@ -67,15 +67,18 @@ Now, we will introduce a function $l(i)$, which produces the smallest number suc
     \begin{algorithmic}
         \Function{Compute}{$S$, $d$} \Comment{$S$ is the input set, $d$ is the word-size}
             \State $n \gets S.length$
-            \For{$i \in [d]$}
+            \For{$i \in [\log_2(d)]$}
                 \State $k' \gets \{\}$
                 \State $t \gets \{\}$
                 \For{$w \in S$}
                     \State $k' \gets k' \cup \{T(w, m_i, 0) + T(w, m_i, 2^i)\}$
                 \EndFor
+                \If{$i < 2$}
+                    \State $S \gets k'$
+                \Else
                 \If{$l(i) = l(i+1)$}
                     \For{$j \in [\lceil S.length / 2 \rceil]$}
-                        \State $t \gets t \cup \{k'_{2j} + (k'_{2j+1} \ll 2^i)\}$
+                    \State $t \gets t \cup \{k'_{2j} + (k'_{2j+1} \ll 2^i)\}$ % TODO: Er det l(i) eller l(i+1)?
                     \EndFor
                 \Else
                     \For{$j \in k'$}
@@ -83,14 +86,39 @@ Now, we will introduce a function $l(i)$, which produces the smallest number suc
                     \EndFor
                 \EndIf
                 \State $S \gets t$
+                \EndIf
             \EndFor
             \State $S' \gets \{\}$
-            \For{$j$ in $[S.length]$}
-                \For{$k$ in $[\log_2(d)]$} % TODO: Research this!
-                \State $S' \gets S' \cup \{T(k_j, m_{l(\log_2(d)), \log_2(d) + 1}, k\cdot 2^{l(\log_2(d))})\}$
+            \For{$j$ in $[S.length]$} \Comment{For every word in the final set}
+            \For{$k$ in $[2^{l(\log_2(d))}]$} \Comment{For every original word embedded in $S_j$}% TODO: Research this!
+                \State $S' \gets S' \cup \{T(S_j, m_{l(\log_2(d)), \log_2(d) + 1}, k\cdot 2^{l(\log_2(d))})\}$
                 \EndFor
             \EndFor
             \State \Return $S'$
         \EndFunction
     \end{algorithmic}
 \end{algorithm}
+This algorithm is quite a bit more complex than the first one, and to prove it we need some more terminology.\\
+When we pack the words $t_0, \dots, t_{2^{i-l(i)}-1}$ into a word $t$, we say that $t$ is $i$-packed. This means one can extract all $2^{i-l(i)}$ different words by performing the operation:
+\begin{equation}
+    \label{eq:extract-from-embed}
+t_j=T(t, m_{l(i), i+1}, j\cdot 2^{l(i)})
+\end{equation}
+for all $j\in [2^{i-l(i)}-1]$.
+The point of the algorithm is to ensure that after every step of the algorithm that every word in $S$ is $(i+1)$ packed. When the first loop of the algorithm terminates at $i=\log_2(d)-1$, then every word will be $\log_2(d)$-packed, which means that it fits $2^{\log_2(d)-l(\log_2(d))}$ words. When working with 64-bit words, this will result in $2^{6-3}=8$ words per packed word.
+\begin{invariant}
+    At the end of the $i$th iteration of the first loop of the algorithm, every word in $S$ will be $(i+1)$-packed for any $i \geq 1$
+\end{invariant}
+\begin{proof}
+    First, the first two iterations of the loop are run, such that $i=1$. During the first two iterations of the loop, no words are combined since it just uses the naive algorithm, which upholds the invariant because any $2$-packed words embeds $2^{0}=1$ of the original words.\\
+    For any iteration where $i\geq 2$, one out of two things can happen. Either, $l(i+1) = l(i)$ (we do not need more bits to describe each segment), or $l(i + 1) = l(i) + 1$ (we need twice the amount of bits to describe each segment).\\
+    In the first case, we will combine the words using bit-shifting. Since every word in $k'$ uses the same amount of bits to represent each segment even though we just combined segments when creating $k'$, there must be an empty space of at least size $l(i+1)$ in every segment. We can fill out that empty space by adding another word bit-shifted by a factor of 2. % TODO: Find ud af om det er 2^i eller 2^l(i)
+    Now, the amount of words embedded is equal to the sum of both of its parts (i.e. has doubled). This upholds the loop invariant since any $(i+1)$-packed word must have twice the amount of words embedded than a $i$-packed word if $l(i+1) = l(i)$ by definition.\\
+    In the second case, $l(i + 1) = l(i) + 1$. In this case, we need to relocate our segments that actually use $2^{l(i)}$ bits so they fit into the segments of size $2^i$ bits that were created when creating $k'$.
+    The same amount of words have been embedded into each words as before, but as $l(i+1) = l(i) + 1$ a $(i+1)$-packed word should only embed the same amount of words as a $i$-packed word, which upholds the invariant.
+    Furthermore, since we relocated the segments, we can now still extract each original word by performing the operation in equation \ref{eq:extract-from-embed}.\\
+    The algorithm will terminate when $i = \log_2(d) - 1$, from which each word will embed $2^{\log_2(d)-l(\log_2(d))}$ of the original words.
+\end{proof}
+
+The second for loop of the algorithm extracts the cardinality of each of the original words by using equation \ref{eq:extract-from-embed}.\\
+We can now move on to showing the run time of the algorithm.
