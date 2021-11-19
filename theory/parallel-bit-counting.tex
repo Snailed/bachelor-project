@@ -133,6 +133,6 @@ $$O(m) + \sum_{i=2}^{\log_2(d)}\lceil \frac{m}{2^{i-l(i)}} \rceil$$
 $$=O(m) + \sum_{i=2}^{\log_2(d)}\lceil m2^{l(i)-i} \rceil$$
 $$\leq O(m) + \sum_{i=2}^{\log_2(d)}(m2^{l(i)-i} + 1)$$
 $$\leq O(m + \log(d)) + m\sum_{i=2}^{\log_2(d)}2^{l(i)-i}$$
-Now we use the fact that $l(i)$ is always the smallest number that satisfies $2^{l(i)} \geq i + 2$. Since it is the smallest number, then $2^{l(i)} < 2(i+2)$, which can be proved by contradiction: $2^{l(i)} \leq 2(i+2) \implies 2^{l(i)-1} \leq i+2$, which shows that there is a number that is 1 smaller than $l(i)$ that upholds the bound $2^{l(i)} \geq i + 2$. Therefore $2^{l(i)} < 2(i+2)$. We can now use this fact:
+Now we use the fact that $l(i)$ is always the smallest number that satisfies $2^{l(i)} \geq i + 2$. Since it is the smallest number, then $2^{l(i)} < 2(i+2)$, which can be proved by contradiction: $2^{l(i)} \geq 2(i+2) \implies 2^{l(i)-1} \geq i+2$, which shows that there is a number that is 1 smaller than $l(i)$ that upholds the bound $2^{l(i)} \geq i + 2$. Therefore $2^{l(i)} < 2(i+2)$. We can now use this fact:
 $$\leq O(m + \log(d)) + m\sum_{i=0}^{\infty}\frac{2(i+2)}{2^{i}} = O(m+\log(d))$$
 The run time of the algorithm can therefore be bound to $O(m + \log(d))$.
