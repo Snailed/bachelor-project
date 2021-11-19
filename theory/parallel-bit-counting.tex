@@ -121,4 +121,18 @@ The point of the algorithm is to ensure that after every step of the algorithm t
 \end{proof}
 
 The second for loop of the algorithm extracts the cardinality of each of the original words by using equation \ref{eq:extract-from-embed}.\\
-We can now move on to showing the run time of the algorithm.
+We can now move on to showing the run time of the algorithm. 
+First, we can try to find the run time of the first for-loop. At each iteration $i$, we will describe the amount of elements in $S$ as $n_i$ with $n=n_0$. We can then describe $n_i$ like so:
+\begin{equation}
+    m_i=\lceil \frac{m}{2^{i-l(i)}} \rceil
+\end{equation}
+which means that the first for-loop in total takes
+$$\sum_{i=2}^{\log_2(d)}\lceil \frac{m}{2^{i-l(i)}} \rceil$$
+Since the last loop iterates over every element of the original set, it must take $O(m)$ time. We can now derive the total run time:
+$$O(m) + \sum_{i=2}^{\log_2(d)}\lceil \frac{m}{2^{i-l(i)}} \rceil$$
+$$=O(m) + \sum_{i=2}^{\log_2(d)}\lceil m2^{l(i)-i} \rceil$$
+$$\leq O(m) + \sum_{i=2}^{\log_2(d)}(m2^{l(i)-i} + 1)$$
+$$\leq O(m + \log(d)) + m\sum_{i=2}^{\log_2(d)}2^{l(i)-i}$$
+Now we use the fact that $l(i)$ is always the smallest number that satisfies $2^{l(i)} \geq i + 2$. Since it is the smallest number, then $2^{l(i)} < 2(i+2)$, which can be proved by contradiction: $2^{l(i)} \leq 2(i+2) \implies 2^{l(i)-1} \leq i+2$, which shows that there is a number that is 1 smaller than $l(i)$ that upholds the bound $2^{l(i)} \geq i + 2$. Therefore $2^{l(i)} < 2(i+2)$. We can now use this fact:
+$$\leq O(m + \log(d)) + m\sum_{i=0}^{\infty}\frac{2(i+2)}{2^{i}} = O(m+\log(d))$$
+The run time of the algorithm can therefore be bound to $O(m + \log(d))$.
