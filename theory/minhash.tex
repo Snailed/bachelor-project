@@ -1,3 +1,28 @@
 % Broder's minhash som simpelt eksempel på en sketching-algoritme
 % Forklaring om hvorfor det virker, samt dens asymptotiske køretid og lidt om dens præcision. Introducér en bound som vi kan sammenligne ud fra.
 \subsection{MinHash}
+The MinHash algorithm is one of the classic solution to the \textit{approximate similarity search problem}, introduced by \citet{broder1997minhash} for the AltaVista search engine.\\
+It is based on the following theorem:
+\begin{theorem}
+    \label{thm:minhash}
+    Let $g$ be a hash function from $V \cap W \rightarrow [M]$ for some $M \in \mathbb{Z}^+$. Let $H(W)=\min_{w\in W} g(w)$. Then
+    $$Pr[H(W)=H(V)]=\frac{|V\cap W|}{|V \cup W|}= J(V,W)$$
+\end{theorem}
+\begin{proof}
+    If you sample a random element $x \in V \cup W$, then you can find the probability that $x \in V\cap W$ like so:
+    $$Pr[x\in V \cap W]=\frac{|V\cap W|}{|V \cup W|}= J(V,W)$$
+    When we calculate $H(W)$ and $H(V)$, the smallest value of the two will be $H(W\cup V)$. Since we use hash functions, this is essentially equivalent of sampling a random value from $W\cup V$. If this value is in the intersection $W\cap V$, then $H(W)$ and $H(V)$ will have picked the same element. This means that the probability of $H(W)=H(V)$ is the same as the probability of picking an element of the intersection from the union, which is $\frac{|V\cap W|}{|V\cup W|}=J(V,W)$
+\end{proof}
+The MinHash algorithm works like so: First, preprocess the data by hashing each coordinate using $k$ different hash functions and saving the smallest value for each hash function as a sketch $S(A)=\langle H_0(A), \dots, H_{k-1}(A)\rangle$.
+To query a set $Q$, calculate its sketch $S(Q)$ and then calculate $$d(S(A),S(Q))=\frac{1}{k}\sum_{i\in [k]}[H_i(A)=H_i(Q)]$$\\
+The expected value of this will then be the Jaccard Similarity:
+$$\mathbb{E}[d(S(A),S(Q))]=\mathbb{E}[\frac{1}{k}\sum_{i\in [k]}[H_i(A)=H_i(Q)]]$$
+$$=\frac{1}{k}\sum_{i\in [k]}\mathbb{E}[[H_i(A)=H_i(Q)]]$$
+$$=\frac{1}{k}\sum_{i\in [k]}J(A,Q)$$
+$$=J(A,Q)$$
+Since each hash function is independent, we can also use a Chernoff probability bound: Let us call each indicator variable $[H_i(A)=H_i(Q)]$ for $X_i$ and let $X=\sum_{i\in [k]}X_i$ and $\mu = \mathbb{E}[X]$. Then for any $\delta > 0$
+$$Pr[X > (1+\delta)\mu] < \left(\frac{e^\delta}{(1+\delta)^{(1+\delta)}}\right)^\mu$$
+$$Pr[X > (1-\delta)\mu] < \left(\frac{e^{-\delta}}{(1-\delta)^{(1-\delta)}}\right)^\mu$$
+The more hash functions we choose, the larger $k$ and $X$ will be, the larger $\mu$ will be and the stricter the bound will be. We can now try to find the run time of the algorithm.\\
+Calculating $H(A)$ of a set $A$ can be done in $O(d)$ time per hash function. Therefore, the preprocessing step can be done in $O(dkn)$ time. To query, one must first calculate the hash of the query set in $|Q|$ time. Then, the query sketch must be compared to each of the sketches in the data set, which can be done in $O(kn)$ time in total. Therefore, it must take $O(|Q| + kn)$ time per query.
+
