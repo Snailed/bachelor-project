@@ -1,0 +1,13 @@
+\subsection{Locality Sensitive Hashing Framework}
+One of the first big contributions to this problem is the Locality Sensitive Hashing Framework by \citet{Indyk1998ApproximateNN}. This framework aims to solve the Approximate Similarity Search problem for any kind of similarity space, including Jaccard similarity, using some appropriate $(s_1, s_2, r_1, r_2)$-sensitive family of hash functions that excibit the following properties:
+\begin{definition}
+\label{thm:sensitive-hash}
+A family of hash functions $\mathcal{H}=\{h:X\rightarrow U\}$ is $(s_1, s_2, r_1, r_2)$-sensitive for some set $X$ with a similarity function $S:X\rightarrow X \rightarrow [0;1]$ if these conditions apply for any $x,y \in X$:
+\begin{itemize}
+    \item If $S(x,y) \geq s_1$, then $Pr[h(x)=h(y)] \geq r_1$
+    \item If $S(x,y) \leq s_2$, then $Pr[h(x)=h(y)] \leq r_2$
+\end{itemize}
+\end{definition}
+First, we define a family of functions $\mathcal{G}=\{g : X \rightarrow U^k \}$ such that $g(p)=\langle h_0(p), \dots, h_{k-1}(p)\rangle$ for $h_i\in \mathcal{H}, k\in \mathbb{Z}^+$, where $k$ is to be determined later. We can now regard $g(p)$ as the unique identifier of a "bucket", where we can store the value $p$. We do this $l$ times with $l$ different functions $g_0, \dots, g_{l-1}$ for each data point $p\in X$. If a collision happens, we store only one of the colliding points at random.\\
+To query, calculate $g_0(q), \dots, g_{l-1}(q)$ and look up the points in each corresponding bucket. This results in points $P=\{p_0, \dots, p_{t-1}\}$ where $t$ is the amount of points found. For each $p_i \in P$, if $S(p_i, q) \geq s_2$, then return it. If no points fulfills this constraint, return false.\\
+Part of implementing this framework for a specific similarity metric (e.g. Jaccard Similarity) requires choosing a suitable value for $k$ and $l$. Finding the right parameters can in this case result in getting a constant 1-sided error probability, as we will show later.
