@@ -1,3 +1,8 @@
 % 1. Fast Similarity Searching er markant hurtigere til søgning end andre eksisterende løsninger, selv med parametre der fører til en acceptabel præcision.
 % 2. Fast Similarity Searching er præcis nok til at blive praktisk anvendt.
 \subsection{Hypothesis}
+We are interested in quantifying whether the parallel bit-counting algorithm presented by \citet{fast-similarity-search} is faster than the trivial linear time model. To do this, we need to formulate a null-hypothesis:
+\begin{hypothesis}
+    Parallel Bit Counting as described by \citet{fast-similarity-search} is not faster than a simple linear-time algorithm in practice.
+\end{hypothesis}
+To reject this hypothesis, we are interested in measuring the actual run time on some kind of data and compare the results to some basis model. % TODO: Skal jeg overhovedet have denne her del?

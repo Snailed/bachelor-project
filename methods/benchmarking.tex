@@ -2,3 +2,18 @@
 % Hvordan kan vi statistisk vide noget om benchmarking?
 % Vil resultaterne være reproducérbare? Hvordan kan vi vide dette? Bør vi køre koden på flere maskiner?
 \subsection{Benchmarking}
+To be able to quantify whether one algorithm is faster than the other, one can try to implement it in practice, run it on a specified data set and measure how long it takes for the algorithm to terminate. Benchmarking this way is common in the industry, but it can be hard to be able to generalise from results, due to the many possible sources of error such as:
+\begin{itemize}
+    \item Results can vary from machine to machine due to factors like difference in instruction sets, processor infrastructure, cache hierachy, compiler compatibility, memory capacity etc.
+    \item The input dataset can be biased towards one specific kind of architecture or implementation.
+    \item Caches become more efficient when "warmed up" e.g. when the computer has recently fetched from the same memory addresses. Two identical benchmarks might produce different results based on whether or not the caches are filled.
+    \item A process that benchmarks a program will have to share the CPU cores with other processes running on the computer. This can produce a high variance between identical benchmarks on the same machine.
+    \item Different compilers can produce more og less optimized code, which might produce varying results on different compilation targets.
+\end{itemize}
+The scope of this project disallows running benchmarks on a wide varity of computers, which presents some uncertancy in the validity of the results. Some of the other sources of error are mitigable.
+\begin{itemize}
+    \item The benchmark should be run multiple times with different pseudo-randomly generated input to mitigate bias in the input data.
+    \item The benchmark should be run multiple times per input data set, until a significant mean runtime can be calculated.
+    \item The benchmark should perform a few "dry runs" before each run to warm up the caches.
+\end{itemize}
+This applications of this software lends itself to large-scale machine learning applications, search engines and data mining. Therefore, the most relevant results would come from running the benchmarks on a machine with access to a GPU, and for the algorithm to be written with parallelism\footnote{In this case, parallelism is meant in a GPU context unlike word parallelism as mentioned previously} in mind.
