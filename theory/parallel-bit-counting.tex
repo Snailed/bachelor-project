@@ -4,7 +4,7 @@ One of the main techniques behind achieving an efficient run time of this method
 A naive algorithm to do this could be described like in algorithm \ref{alg:naive-cardinality}.
 \begin{algorithm}[H]
 \caption{A naive linear time algorithm}\label{alg:naive-cardinality}
-\begin{algorithmic}
+\begin{algorithmic}[1]
 \Function{Cardinality}{$w$, $d$} \Comment{$w$ is the input word, $d$ is the word-size}
 \State $x \gets 0$
 \State $i \gets 0$
@@ -30,7 +30,7 @@ This operation isolates the segments indicated by the bit-mask starting from the
 The algorithm to calculate the cardinality can then be described like in algorithm \ref{alg:divide-and-conquer-cardinality}
 \begin{algorithm}[H]
 \caption{A divide-and-conquer approach}\label{alg:divide-and-conquer-cardinality}
-\begin{algorithmic}
+\begin{algorithmic}[1]
 \Function{Cardinality}{$w$, $d$} \Comment{$w$ is the input word, $d$ is the word-size}
 \State $i \gets 0$
 \While{$i \leq \log_2(d)$}
@@ -64,7 +64,7 @@ To introduce parallelism into the algorithm, we must first realize the following
 Now, we will introduce a function $l(i)$, which produces the smallest number such that $2^{l(i)} \geq i + 2$. If we use the bit mask $m_{l(i), i+1}$ instead of $m_{i}$, we will get the same result. This also means that we can pack $2^{i-l(i)}$ words into one by utilizing the empty space in each segment.
 \begin{algorithm}[H]
 \caption{A parallel divide-and-conquer algorithm}\label{alg:parallel-d-and-c}
-    \begin{algorithmic}
+    \begin{algorithmic}[1]
         \Function{Compute}{$S$, $d$} \Comment{$S$ is the input set, $d$ is the word-size}
             \State $n \gets S.length$
             \For{$i \in [\log_2(d)]$}

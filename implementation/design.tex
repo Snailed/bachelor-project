@@ -1,1 +1,8 @@
 \subsection{Design}
+% Fortæl om bit masken, og hvordan den udregnes
+% Fortæl om beregning af $l$
+% Fortæl om vector-klassen i Rust, om beregninger på vektorer
+To be able to use the bit mask, it needs to be calculated efficiently. A $\mathbb{Z}^{\log_2(d) \times \log_2(d)}$ matrix can be calculated in $O(\log_2(d)^2)$ time at the start of the procedure. Then, each bit mask can then be looked up in constant time.\\
+It is also nescessary to efficiently be able to look up $l(i)$ for any iteration $i$.
+Since the word size is known on compile time and since at most $\log_2(d)+2$ different values are needed, each possible value can easily be hard-coded as a pattern match statement.
+

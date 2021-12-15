@@ -1,1 +1,14 @@
 \subsection{Benchmarking}
+% Hvordan har jeg benchmarket? 
+% Hvordan har min referenceimplementation set ud? 
+% Hvilket bibliotek brugte jeg? 
+% Hvor mange gange kørte den? Hvilken data fik den?
+To benchmark the algorithm, two reference implementations were created to be used as a baseline models. These implementations were based on algorithm \ref{alg:naive-cardinality} and \ref{alg:divide-and-conquer-cardinality}. A list of $2^{24}$ random numbers were to be generated and used as input for each algorithm.\\
+The Rust library \texttt{Criterion.rs}\cite{criterion} was used to perform the benchmarking. Criterion.rs was very useful for multiple reasons. 
+\begin{itemize}
+    \item First of all, Criterion.rs integrates into standard Rust tooling easily and allows benchmarking on binary code built for production (e.g. with full optimizations and no debugging symbols)
+    \item Secondly, Criterion.rs provides a compiler "opaque" functions that makes sure that repeated calls to the same function do not get optimized away.
+    \item Criterion.rs handles warming up caches by running the algorithms multiple times before beginning to measure.
+    \item Lastly, Criterion.rs does not record the run time of a single operation - instead it runs multiple samples each consisting of a number of iterations. The run time is the calculated as the runtime per sample divided by the amount of iterations. 
+\end{itemize}
+
