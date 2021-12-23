@@ -1,4 +1,4 @@
-\documentclass[12pt,a4paper,oneside,draft]{article}
+\documentclass[12pt,a4paper]{article}
 \usepackage[utf8]{inputenc}
 
 \usepackage[
@@ -21,10 +21,16 @@ natbib=true
 
 \usepackage{appendix}
 
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+
 \newtheorem{definition}{Definition}
 \newtheorem{invariant}{Invariant}
 \newtheorem{theorem}{Theorem}
 \newtheorem{hypothesis}{Hypothesis}
+
+\graphicspath{ {./assets} }
 
 \begin{document}
 \title{Parallel Bit-Counting for Approximate Similarity Searching}

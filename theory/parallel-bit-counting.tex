@@ -119,8 +119,14 @@ The point of the algorithm is to ensure that after every step of the algorithm t
     Furthermore, since we relocated the segments, we can now still extract each original word by performing the operation in equation \ref{eq:extract-from-embed}.\\
     The algorithm will terminate when $i = \log_2(d) - 1$, from which each word will embed $2^{\log_2(d)-l(\log_2(d))}$ of the original words.
 \end{proof}
-
-The second for loop of the algorithm extracts the cardinality of each of the original words by using equation \ref{eq:extract-from-embed}.\\
+The second for loop of the algorithm extracts the cardinality of each of the original words by using equation \ref{eq:extract-from-embed}. An unfortunate side effect of this algorithm is that the index of the cardinality is not preserved, due to the re-shifting of sections at lines 17-19. This means that the cardinality of $S_i$ might be contained in $S_j$ where $i\not = j$. The original paper by \citep{fast-similarity-search} does not mention this, and it is not said whether this affects the criteria of correctness, but we will for now assume that it does not. It does seem like this only becomes a problem when $\log_2(d)>6$, since the affecting branch will be run when $i=7$. In the case where $d=128$, the following formula seems to calculate an index $j$ from $i$ such that $|S_i|=|S_j|$.\\
+$$
+j(i) =
+\begin{cases}
+    (i \gg 1) + ((i \gg 3) \ll 2) & \textrm{if }i \& 1 = 0 \\
+    (i \gg 1) + 4 + ((i \gg 3) \ll 2) & \textrm{otherwise}
+\end{cases}
+$$
 We can now move on to showing the run time of the algorithm. 
 First, we can try to find the run time of the first for-loop. At each iteration $i$, we will describe the amount of elements in $S$ as $n_i$ with $n=n_0$. We can then describe $n_i$ like so:
 \begin{equation}

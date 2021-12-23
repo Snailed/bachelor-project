@@ -2,3 +2,14 @@
 % Hvor præcis var min implementation i forhold til hvad man kan forvente? Hvor meget variede svaret i forhold til den forventede værdi?
 % Variede mit svar på forskellige maskiner?
 \section{Results}
+\begin{figure}
+    \centering
+    \includegraphics[width=\textwidth]{combined.png}
+    \caption{Run time of each algorithm on different word-lengths}
+    \label{fig:runtime}
+\end{figure}
+The benchmarks were run on different input sizes that were all powers of two - in this case $\{2^4, 2^5, \dots 2^{19}\}$. The results can be seen in figure \ref{fig:runtime}. It can be seen that the parallel algorithm performs slightly worse than the naïve sequential algorithm when the word size is 64-bits. This must mean that the hidden factors hidden in the big-O notation of the parallel algorithm's run-time outweigh the $d$ factor of the naïve algorithm. This makes sense, since the parallel algorithm is much more complex and only starts benefitting from parallelism after the first three iterations. Interestingly enough, the parallel algorithm only seems to be slower when the input size is larger than $2^{16}$.\\
+When run on 128-bit size words, the naïve sequential algorithm performs much worse than than both the parallel and the divide-and-conquer algorithm. This shows that when we increase the word size, algorithms that have a linear dependency on $d$ suffer much more than algorithms that have a logarithmic dependency, which is as expected.\\
+It is also seen that the divide and conquer algorithm significantly outperforms both the parallel and the naïve algorithm with both word sizes. This is might be due to the fact that it is much simpler than the parallel algorithm and is asymptotically more optimal than the naïve sequential algorithm.
+The final thing to note is that the \texttt{popcnt} CPU instruction is the ultimately fastest option out of the algorithms. This shows that these algorithms might only be useful on hardware that does not support this instruction or on very large wordsizes. Even then, the divide-and-conquer algorithm seems to be sufficient or even superior to the parallel algorithm despite its suboptimal theoretical run time.\\
+
