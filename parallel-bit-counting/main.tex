@@ -1,6 +1,6 @@
-\subsection{Parallel Bit Counting}
+\section{Parallel Bit Counting}
 To be able to filter bad matches from good matches, we can use the 1-bit minwise hashing trick to pack the results of multiple subexperiments into one word, which by comparing the bit-wise cardinality (amount of bits set in a bit vector) of two words approximates the similarity between the two. % TODO: Research this!
-One of the main techniques behind achieving an efficient run time of this method requires computing the cardinality of a bit vector efficiently. \citet{fast-similarity-search} presents a parallel algorithm to perform this but does neither describe any implementation details and has an unnecessarily complicated proof. I will try to describe the same algorithm in a much simpler fashion and prove its correctness and run time while doing it.
+One of the main techniques behind achieving an efficient run time of this method requires computing the cardinality of a bit vector efficiently. \citet{fast-similarity-search} presents a parallel algorithm to perform this but does neither describe any implementation details and has an unnecessarily complicated proof. I will try to describe the same algorithm in a much simpler fashion and prove its correctness and run time while doing it. This means that this section is my own interpretation of the algorithm, proofs and analysis described in \cite{fast-similarity-search}.
 A naive algorithm to do this could be described like in algorithm \ref{alg:naive-cardinality}.
 \begin{algorithm}[H]
 \caption{A naive linear time algorithm}\label{alg:naive-cardinality}
@@ -18,7 +18,7 @@ A naive algorithm to do this could be described like in algorithm \ref{alg:naive
 \end{algorithm}
 This algorithm trivially runs in linear time to the dimensionality $d$ of the input word $w$. For $n$ words of size $d$, this algorithm runs in $O(nd)$ time.
 \citet{fast-similarity-search} presents two improvements to this: The first will improve the run time to $O(n\log(d))$ time by utilizing a divide-and-conquer technique and the second to $O(n + \log(d))$ time by introducing parallelism.
-\subsubsection{Divide-and-Conquer}
+\subsection{Divide-and-Conquer}
 To explain how divide-and-conquer methods can be used to improve run-time, we must first introduce a bit mask from \cite{fast-similarity-search} defined like so:
 $$m_{i,j} = \underbrace{0\dots 0}_{2^{j}-2^{i}}\underbrace{1\dots 1}_{2^i}\dots\underbrace{0\dots 0}_{2^{j}-2^{i}}\underbrace{1\dots 1}_{2^i}$$
 where $j > i$ and $j, i \in \mathbb{Z}^+$. The notation $m_{i}$ is a shorthand for $m_{i, i+1}$ and indicates a mask with an equal amount of 1's and 0's. By computing $w \land m_{i,j}$ for some word $w$ and some integers $i, j$, we can isolate a specific segments of size $2^i$ in the bitstring.
@@ -51,9 +51,10 @@ At the $i$th iteration of the algorithm, each bitstring-segment of size $2^i$ of
     If at step $i$ the word $w_i$ contains $\frac{d}{2^i}$ segments of size $2^i$, then invariant \ref{thm:divide-invariant} will be upheld if we combine each segment with it's neighbor to form a segment of size $2^{i+1}$. Since the cardinality of a combined bitstring is equal to the cardinality of its parts, we can divide all of the segments into pairs of size $2^{i+1}$ and add them together to form the new pair, which is done by the operation $T(w, m_i, 0) + T(w, m_i, 2^i)$ in constant time if the masks are pre-computed. This operation works because $T(w, m_i, 0)$ isolates every other segment of size $2^i$ starting from the first segment and $T(w, m_i, 2^i)$ isolates every other segment of size $2^i$ starting from the second segment.\\
 \end{proof}
 When the algorithm terminates after $\log_2(d)$ iterations, the segments will have size $2^{\log_2{(d)}} = d$ and thus span the entire original word, which means that we have the bit-count of the original word. % TODO: Skriv noget omkring hvad der sker når d ikke er en faktor af 2
-\subsubsection{Parallelism}
+\subsection{Parallelism}
 To introduce parallelism into the algorithm, we must first realize the following: When two segments of $2^i$ bits gets combined, they will not need all of the $2^{i+1}$ bits to represent their sum. It is actually such that the bits used at iteration $i$ is exactly $i+1$.
 \begin{invariant}
+    \label{thm:amount-of-bits}
     At the $i$th iteration of the algorithm, the amount of bits set in a given segment of a word is at most $i+1$.
 \end{invariant}
 \begin{proof}
@@ -67,7 +68,7 @@ Now, we will introduce a function $l(i)$, which produces the smallest number suc
     \begin{algorithmic}[1]
         \Function{Compute}{$S$, $d$} \Comment{$S$ is the input set, $d$ is the word-size}
             \State $n \gets S.length$
-            \For{$i \in [\log_2(d)]$}
+            \For{$i \in [\log_2(d) - 1]$}
                 \State $k' \gets \{\}$
                 \State $t \gets \{\}$
                 \For{$w \in S$}
@@ -119,7 +120,15 @@ The point of the algorithm is to ensure that after every step of the algorithm t
     Furthermore, since we relocated the segments, we can now still extract each original word by performing the operation in equation \ref{eq:extract-from-embed}.\\
     The algorithm will terminate when $i = \log_2(d) - 1$, from which each word will embed $2^{\log_2(d)-l(\log_2(d))}$ of the original words.
 \end{proof}
-The second for loop of the algorithm extracts the cardinality of each of the original words by using equation \ref{eq:extract-from-embed}. An unfortunate side effect of this algorithm is that the index of the cardinality is not preserved, due to the re-shifting of sections at lines 17-19. This means that the cardinality of $S_i$ might be contained in $S_j$ where $i\not = j$. The original paper by \citep{fast-similarity-search} does not mention this, and it is not said whether this affects the criteria of correctness, but we will for now assume that it does not. It does seem like this only becomes a problem when $\log_2(d)>6$, since the affecting branch will be run when $i=7$. In the case where $d=128$, the following formula seems to calculate an index $j$ from $i$ such that $|S_i|=|S_j|$.\\
+\subsection{Discrepansies}
+In the original article, combining the sections of a word (like we do in algorithm \ref{alg:divide-and-conquer-cardinality} and on line 7 and 14 in algorithm \ref{alg:parallel-d-and-c}) is done with the following operation:
+$$t^{(i+1)}=T(T(t^{(i)}, m_i, 0) + T(t^{(i)}, m_i, 2^i), m_{i+1}, 0)$$
+Here, the algorithm is described as a recurrence, where $t^{(i)}$ is the word $t$ after $i$ iterations. This definition is troublesome since the outermost call to $T$ causes information loss. A counter-example to this is just the word $0\texttt{b}1111$. We can see that this word contains 4 bits set. This is $t^{(0)}$. Using this operation, we can see that 
+$$t^{(1)}=T(T(0\texttt{b}1111, 0\texttt{b}0101, 0) + T(0\texttt{b}1111, 0\texttt{b}0101, 2), 0\texttt{b}0011, 0) = 0\texttt{b}0010$$
+The outmost application of the bit mask means that we lose information about the most siginificant section of $t$. If we were to calculate $t^{(2)}$ and thus let the algorithm terminate, we would only have counted half of all the bits!\\
+This is simply solved by removing the outermost call to $T$.\\
+Another issue with the original article is that the order of the cardinalities in the final set is not consistent with the order of the original set.
+When the algorithm shift the sections in each word in line 17-19 of the algorithm, every other section gets shifted $2^i$ bits to the right. When the algorithm has terminated, the cardinality of $S_i$ might be contained in $S'_j$ where $i\not = j$. The original paper by \citep{fast-similarity-search} does not mention this, and it is not said whether this affects the criteria of correctness, but for any practical usage, this does seem like it could be an issue. This is only a problem when $\log_2(d) \leq 7$, since the affected branch is only run when $l(i + 1) = l(i) + 1$ and $i > 2$ (it is also run when $i=2$, but causes no problem since no words have been packed yet, which means that they will not get shifted). In the case where $d=128$, the following formula seems to calculate an index $j$ from $i$ such that $|S_i|=S'_j$.\\
 $$
 j(i) =
 \begin{cases}
@@ -127,6 +136,17 @@ j(i) =
     (i \gg 1) + 4 + ((i \gg 3) \ll 2) & \textrm{otherwise}
 \end{cases}
 $$
+\begin{proof}
+When $i=6$, every word in $S$ contains $2^{6-3}=8$ words. Before lines 17-19 are run, each word from the original set is described as one bitstring segment of $2^{l(6)}=8$ bits each.
+Lines 17-19 then takes every other segment and shifts it $2^6=64$ bits to the left. Since this is the last iteration of the algorithm, the for loop in lines 25-29 gets run immediately after, which extracts each segment into $S'$ in the order of the least significant first for each word.\\
+This means that every other word from the original set will be shifted 4 indices later in $S'$, since 64 bits can contain $64/8=8$ words and half of them get shifted as well. 
+%When one calculates $j(i)$, and i is less than 8 and i is even, then we know that it has not been shifted. This means that the index we need to calculate must be one of the first 4 indices of $S'$. Since the order of the even elements of the original set is preserved, then we can just calculate half of the index to find 
+The calculation presented to find $j(i)$ has two branches: one branch if $i$ is even and one if $i$ is uneven. If $i$ is even, $j(i)$ can be found by calculating $(i \gg 1) + ((i\gg 3) \ll 2)$ (as is done using bit-shift calculation). If $i$ is odd, then this calculation is just offset by 4.
+This works, because the shifting makes such that $S'$ contains series of the first 4 even indices of the original set, then the first 4 odd indices, then the next 4 even indices and so on. The $(i \gg 3)$ calculates the index of which of these series that $i$ is found in, and by shifting it 2 bits to the left, we effectively multiply this index by 4 to find which series that our number is in. Then we calculate which of these 4 indices in the series that correspond to our number by calculating $(i \gg 1)$. If $i$ is odd, we will have to add 4, since we are interested in the odd indices.
+%This works because $(i \gg 8)$ calculates which word in the final , which is multiplied by 4.
+\end{proof}
+If we were to use a word size that is large enough such that lines 17-19 get run again, then we would have to find a more complex computation to find the correct index. This will only happen when $d=16384$, so we can safely assume that this will not be relevant in the near future unless new computers get invented with such large word sizes.
+\subsection{Runtime Analysis}
 We can now move on to showing the run time of the algorithm. 
 First, we can try to find the run time of the first for-loop. At each iteration $i$, we will describe the amount of elements in $S$ as $n_i$ with $n=n_0$. We can then describe $n_i$ like so:
 \begin{equation}

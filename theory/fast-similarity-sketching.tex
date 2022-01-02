@@ -1,7 +1,7 @@
 % Hvad er pointen med Fast Similarity Sketching
 % Hvad har Dahlgaard introduceret? Hvordan gør de det sublineært? Hvad er de overordnede linjer for beviset?
 % Hvad har Knudsen introduceret? Hvad er den teoretiske forskel?
-\subsection{Fast Similarity Sketching}
+\subsection{Later Improvements}
 Many improvements have since been discovered. The last step of each query of the LSH framework results in an expected $O(L)$ false positives that needs to be filtered out. By using an intermediate sketch of size $O(\log_2^3(n))$, it is possible to reduce the query time to $O((l\cdot |Q|)\log_2^3(n))$ by sampling from the intermediate sketch instead of the regular sketch \cite{dahlgaard2017fast}.
 \citet{dahlgaard2017fast} have introduced an improved sketch, which is much faster to create and preserves the same properties as the MinHash sketch, while reducing the query time to $O(k\cdot l + |Q|)=O(n^\rho \log_2(n) + |Q|)$. Part of this improvement is due to a special algorithm that can eliminate bad matches by estimating if the Jaccard similarity between the query set and candidate set is above some threshold without calculating the actual Jaccard similarity. This reduces the filtering step to only take $O(l + |Q|)$ time, since the bad matches can be eliminated in $O(l)$ time and the amount of matches remaining is $O(1)$. \citet{christiani2018fast} has since improved this query time to $O(n^\rho + |Q|)$. \\
 Until now, the data structures presented error with a constant probability $O(1)$. If one wants to reach a better error probability $1>\varepsilon>0$, it is common practice within the field to use $O(\log_2(1/\varepsilon))$ independent data structures. This will usually result in a query time of $O((n^\rho + |Q|)\log_2(1/\varepsilon))$. \\

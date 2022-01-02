@@ -22,10 +22,8 @@ $$=\frac{1}{k}\sum_{i\in [k]}J(A,Q)$$
 $$=J(A,Q)$$
 Since each hash function is independent, we can also use a Chernoff probability bound: Let us call each indicator variable $[H_i(A)=H_i(Q)]$ for $X_i$ and let $X=\sum_{i\in [k]}X_i$ and $\mu = \mathbb{E}[X]$. Then for any $\delta > 0$
 $$Pr[X > (1+\delta)\mu] < \left(\frac{e^\delta}{(1+\delta)^{(1+\delta)}}\right)^\mu$$
-$$Pr[X > (1-\delta)\mu] < \left(\frac{e^{-\delta}}{(1-\delta)^{(1-\delta)}}\right)^\mu$$
-The more hash functions we choose, the larger $k$ and $X$ will be, the larger $\mu$ will be and the stricter the bound will be. We can now try to find the run time of the algorithm.\\
-Calculating $H(A)$ of a set $A$ can be done in $O(d)$ time per hash function. Therefore, the preprocessing step can be done in $O(dkn)$ time. To query, one must first calculate the hash of the query set in $|Q|$ time. Then, the query sketch must be compared to each of the sketches in the data set, which can be done in $O(kn)$ time in total. Therefore, it must take $O(|Q| + kn)$ time per query.
-
+$$Pr[X < (1-\delta)\mu] < \left(\frac{e^{-\delta}}{(1-\delta)^{(1-\delta)}}\right)^\mu$$
+The more hash functions we choose, the larger $k$ and $X$ will be, the larger $\mu$ will be and the stricter the bound will be. 
 \subsubsection{Implementation with the LSH framework}
 For any hash function $h$ picked randomly from $\mathcal{H}$, we know that $Pr[h(A)=h(B)]=J(A,B)$ as shown earlier. This must mean that $h$ is $(j_1, j_2, j_1, j_2)$-sensitive. If we then consider a function $g$ picked randomly containing $h_0, \dots, h_{k-1}$ hash functions. We can trivially derive that $Pr[g(a)=g(b)]=J(A,B)^k$. This means that $g$ is $(j_1, j_2, j_1^k, j_2^k)$-sensitive. By choosing $k=\lceil \frac{\log_2(n)}{\log_2(1/j_2)} \rceil$, we can derive that $g$ now is $(j_1, j_2, O(1/n^\rho), 1/n)$-sensitive where $\rho=\frac{\log_2{1/j_1}}{\log_2{1/j_2}}$. % TODO: Bevis dette
 This has the consequence that the error probability now is dependendant on $1/n$, which can be converted to a constant error probability by repeating the experiment multiple times. By keeping $l=\lceil n^\rho \rceil$ different data structures, we reduce the error probability to $O(1)$.
