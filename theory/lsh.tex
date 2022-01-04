@@ -2,7 +2,7 @@
 One of the first big contributions to this problem is the Locality Sensitive Hashing Framework by \citet{Indyk1998ApproximateNN}. This framework aims to solve the Approximate Similarity Search problem for any kind of similarity space, including Jaccard similarity, using some appropriate $(s_1, s_2, r_1, r_2)$-sensitive family of hash functions that excibit the following properties:
 \begin{definition}
 \label{thm:sensitive-hash}
-A family of hash functions $\mathcal{H}=\{h:X\rightarrow U\}$ is $(s_1, s_2, r_1, r_2)$-sensitive for some set $X$ with a similarity function $S:X\rightarrow X \rightarrow [0;1]$ if these conditions apply for any $x,y \in X$:
+A family of hash functions $\mathcal{H}=\{h:X\rightarrow U\}$ is $(s_1, s_2, r_1, r_2)$-sensitive for some set $X$ and some universe $U$ with a similarity function $S:X\rightarrow X \rightarrow [0;1]$ if these conditions apply for any $x,y \in X$:
 \begin{itemize}
     \item If $S(x,y) \geq s_1$, then $Pr[h(x)=h(y)] \geq r_1$
     \item If $S(x,y) \leq s_2$, then $Pr[h(x)=h(y)] \leq r_2$

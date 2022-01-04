@@ -1,11 +1,11 @@
 % Broder's minhash som simpelt eksempel på en sketching-algoritme
 % Forklaring om hvorfor det virker, samt dens asymptotiske køretid og lidt om dens præcision. Introducér en bound som vi kan sammenligne ud fra.
 \subsection{MinHash}
-The MinHash algorithm is one of the classic solution to the \textit{approximate similarity search problem}, introduced by \citet{broder1997minhash} for the AltaVista search engine.\\
+The MinHash algorithm is one of the classic solutions to the \textit{approximate similarity search problem}, introduced by \citet{broder1997minhash} for the AltaVista search engine.\\
 It is based on the following theorem:
 \begin{theorem}
     \label{thm:minhash}
-    Let $g$ be a hash function from $V \cap W \rightarrow [M]$ for some $M \in \mathbb{Z}^+$. Let $H(W)=\min_{w\in W} g(w)$. Then
+    Let $g$ be a hash function from $V \cup W \rightarrow [M]$ for some $M \in \mathbb{Z}^+$ where $W\cup V\subseteq U$. Let $H(W)=\min_{w\in W} g(w)$. Then
     $$Pr[H(W)=H(V)]=\frac{|V\cap W|}{|V \cup W|}= J(V,W)$$
 \end{theorem}
 \begin{proof}
@@ -25,6 +25,6 @@ $$Pr[X > (1+\delta)\mu] < \left(\frac{e^\delta}{(1+\delta)^{(1+\delta)}}\right)^
 $$Pr[X < (1-\delta)\mu] < \left(\frac{e^{-\delta}}{(1-\delta)^{(1-\delta)}}\right)^\mu$$
 The more hash functions we choose, the larger $k$ and $X$ will be, the larger $\mu$ will be and the stricter the bound will be. 
 \subsubsection{Implementation with the LSH framework}
-For any hash function $h$ picked randomly from $\mathcal{H}$, we know that $Pr[h(A)=h(B)]=J(A,B)$ as shown earlier. This must mean that $h$ is $(j_1, j_2, j_1, j_2)$-sensitive. If we then consider a function $g$ picked randomly containing $h_0, \dots, h_{k-1}$ hash functions. We can trivially derive that $Pr[g(a)=g(b)]=J(A,B)^k$. This means that $g$ is $(j_1, j_2, j_1^k, j_2^k)$-sensitive. By choosing $k=\lceil \frac{\log_2(n)}{\log_2(1/j_2)} \rceil$, we can derive that $g$ now is $(j_1, j_2, O(1/n^\rho), 1/n)$-sensitive where $\rho=\frac{\log_2{1/j_1}}{\log_2{1/j_2}}$. % TODO: Bevis dette
+For any hash function $h$ picked randomly from $\mathcal{H}$, we know that $Pr[h(A)=h(B)]=J(A,B)$ as shown earlier. This must mean that $h$ is $(j_1, j_2, j_1, j_2)$-sensitive. If we then consider a function $g$ picked randomly containing $h_0, \dots, h_{k-1}$ hash functions. We can then derive that $Pr[g(a)=g(b)]=J(A,B)^k$. This means that $g$ is $(j_1, j_2, j_1^k, j_2^k)$-sensitive. By choosing $k=\lceil \frac{\log_2(n)}{\log_2(1/j_2)} \rceil$, we can derive that $g$ now is $(j_1, j_2, O(1/n^\rho), 1/n)$-sensitive where $\rho=\frac{\log_2{1/j_1}}{\log_2{1/j_2}}$. % TODO: Bevis dette
 This has the consequence that the error probability now is dependendant on $1/n$, which can be converted to a constant error probability by repeating the experiment multiple times. By keeping $l=\lceil n^\rho \rceil$ different data structures, we reduce the error probability to $O(1)$.
-This means that the run time needed to create the required sketches is $O(l\cdot k \cdot d)=O(n^\rho \log_2(n)d)$ per data point. The query time is now $O(l\cdot k \cdot |Q|)=O(n^\rho \log_2(n)|Q|)$ since we need to calculate a min-hash value of $|Q|$ for each of the $l$ sketches which takes $O(k\cdot |Q|)$ time per sketch. This process will lead to $l$ different candidate points, from which a true positive can be linearily searched in $O(l\cdot |Q|)$ time.
+This means that the run time needed to create the required sketches is $O(l\cdot k \cdot d)=O(n^\rho \log_2(n)|Q|)$ per data point. The query time is now $O(l\cdot k \cdot |Q|)=O(n^\rho \log_2(n)|Q|)$ since we need to calculate a min-hash value of $|Q|$ for each of the $l$ sketches which takes $O(k\cdot |Q|)$ time per sketch. This process will lead to $l$ different candidate points, from which a true positive can be linearily searched in $O(l\cdot |Q|)$ time.
