@@ -1,0 +1,16 @@
+\section{Mathematical Notation}
+Although sets by definition are not ordered, it is commonly seen in the litterature to index into a set (see \cite{fast-similarity-search} for an example). Therefore, sets are regarded as ordered for this project.\\
+Expressions within square brackets are indicator variables denoted using Iverson notation:
+$$[X = Y] \in \{0, 1\}$$
+$$0 \leq Pr[[X = Y] = 1] \leq 1$$
+Integers within square brackets denotes the integer interval between 0 and the number.
+$$[n] = [0 \dots (n-1)] = \{ 0, 1, \dots, n-1\}$$
+Numbers in a different base than 10 will be indicated with a subscript.
+$$11010110_2 = 214$$
+Bit-shifting is done using C-style notation. Therefore 
+$$0101_2 \ll 1 = 1010_2$$
+$$1010_2 \gg 1 = 0101_2$$
+Logical operations between integers are meant as bit-wise.
+$$\textrm{AND:}\quad 0101_2 \land 0011_2 = 0001_2$$
+$$\textrm{XNOR:}\quad 0101_2 \odot 0011_2 = 1001_2$$
+For this project, it is often useful to reference the same word after different iterations of an algorithm. To do this, the notation $x^{(i)}$ means a word after $i$ iterations of an algorithm.
