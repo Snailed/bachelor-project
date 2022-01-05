@@ -51,6 +51,7 @@ At the $i$th iteration of the algorithm, each bitstring-segment of size $2^i$ of
     If at step $i$ the word $w^{(i)}$ contains $\frac{d}{2^i}$ segments of size $2^i$, then invariant \ref{thm:divide-invariant} will be upheld if we combine each segment with its neighbor to form a segment of size $2^{i+1}$. Since the cardinality of a combined bitstring is equal to the cardinality of its parts, we can divide all of the segments into pairs of size $2^{i+1}$ and add them together to form the new pair, which is done by the operation $T(w, m_i, 0) + T(w, m_i, 2^i)$ in constant time if the masks are pre-computed. This operation works because $T(w, m_i, 0)$ isolates every other segment of size $2^i$ starting from the first segment and $T(w, m_i, 2^i)$ isolates every other segment of size $2^i$ starting from the second segment.\\
 \end{proof}
 When the algorithm terminates after $\log_2(d)$ iterations, the segments will have size $2^{\log_2{(d)}} = d$ and thus span the entire original word, which means that we have the bit-count of the original word. % TODO: Skriv noget omkring hvad der sker når d ikke er en faktor af 2
+\input{tikz/example1}
 \subsection{Parallelism}
 To introduce parallelism into the algorithm, we must first realize the following: When two segments of $2^i$ bits gets combined, they will not need all of the $2^{i+1}$ bits to represent their sum. It is actually such that the bits used at iteration $i$ is exactly $i+1$.
 \begin{invariant}

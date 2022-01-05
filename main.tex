@@ -4,7 +4,7 @@
 \documentclass[12pt,usenames]{article}
 \usepackage[a4paper, hmargin={2.8cm, 2.8cm}, vmargin={2.5cm, 2.5cm}]{geometry}  % Geometri-pakke: Styrer bl.a. maginer    %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\usepackage[en, nat, babel, titelside]{ku-forside} % KU-forside
+\usepackage[english, science, hyperref]{ku-frontpage}
 \usepackage[utf8]{inputenc}
 \usepackage[
 backend=biber,
@@ -30,12 +30,13 @@ natbib=true
 \usepackage{caption}
 \usepackage{subcaption}
 
-\usepackage{hyperref}
+\usepackage{tikz}
 
-\hypersetup{
-    pdftitle={Parallel Bit-Counting for Approximate Similarity Searching},
-    pdfpagemode=FullScreen,
-}
+\usetikzlibrary{matrix,backgrounds}
+% \hypersetup{
+%     pdftitle={Parallel Bit-Counting for Approximate Similarity Searching},
+%     pdfpagemode=FullScreen,
+% }
 
 \newtheorem{definition}{Definition}
 \newtheorem{invariant}{Invariant}
@@ -64,12 +65,12 @@ natbib=true
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%               Titel                    %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\titel{Parallel Bit-Counting} %
-\undertitel{for Approximate Similarity Searching} %
-\opgave{Bachelor's project} % Findes kun under 'titelside'
-\forfatter{Rasmus Hag Løvstad, \texttt{pgq596@alumni.ku.dk}}%
-\dato{\today}%
-\vejleder{Supervisor: Mikkel Thorup} %  Findes kun under 'titelside'
+\title{Parallel Bit-Counting} %
+\subtitle{for Approximate Similarity Searching} %
+\assignment{Bachelor's project} % Findes kun under 'titelside'
+\author{Rasmus Hag Løvstad, \texttt{pgq596@alumni.ku.dk}}%
+\date{Handed in: \today}%
+\advisor{Supervisor: Mikkel Thorup} %  Findes kun under 'titelside'
 \begin{document}
 
 % \title{Parallel Bit-Counting for Approximate Similarity Searching}

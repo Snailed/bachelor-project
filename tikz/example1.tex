@@ -1,0 +1,18 @@
+\tikzset{my multistyler/.style 2 args={
+    @my multistyler/.style={column ##1/.append style={#2}},
+    @my multistyler/.list={#1}
+  }
+}
+\begin{figure}
+\begin{tikzpicture}[font=\ttfamily,
+array/.style={matrix of nodes,nodes={draw, minimum size=7mm},column sep=-\pgflinewidth, row sep=2cm, nodes in empty cells,},
+my multistyler={1,2,5,6,9,10}{nodes={fill=green!30}}
+]
+\matrix[array] {
+ 1 & 1 & 1 & 0 & 0 & 1 & 0 & 1 & 1 & 0 \\
+ 1 & 1 & 1 & 0 & 0 & 1 & 0 & 1 & 1 & 0 \\
+};
+
+\draw (array-1-1.north) -- (array-1-4.north);
+\end{tikzpicture}
+\end{figure}
