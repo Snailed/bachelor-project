@@ -1,5 +1,5 @@
 \section{Parallel Bit Counting}
-In the same article where \citet{fast-similarity-search} presents the improvements for algorithms with an $o(\varepsilon)$ error probability, a parallel algorithm to compute the cardinality of a bit-string is also presented. It is only described by recurrences, and omits any implementation details. I will try to describe the same algorithm in a much simpler fashion and prove its correctness and run time while doing it. This means that this section is my own interpretation of the algorithm, proofs and analysis described in \cite{fast-similarity-search}.
+In the same article where \citet{fast-similarity-search} presents the improvements for algorithms with an $o(\varepsilon)$ error probability, a parallel algorithm to compute the cardinality of a bit-string is also presented. It is only described by recurrences, and omits any implementation details. I will try to describe the same algorithm in a much simpler fashion and prove its correctness and time complexity while doing it. This means that this section is my own interpretation of the algorithm, proofs and analysis described in \cite{fast-similarity-search}.
 A naive algorithm to perform bit-counting could be described like in algorithm \ref{alg:naive-cardinality}.
 \begin{algorithm}[H]
 \caption{A naive linear time algorithm}\label{alg:naive-cardinality}
@@ -16,9 +16,9 @@ A naive algorithm to perform bit-counting could be described like in algorithm \
 \end{algorithmic}
 \end{algorithm}
 This algorithm trivially runs in linear time to the dimensionality\footnote{For the rest of this project, it is assumed that $d$ is a power of 2.} $d$ of the input word $w$. For $n$ words of size $d$, this algorithm runs in $O(nd)$ time.
-\citet{fast-similarity-search} presents two improvements to this: The first will improve the run time to $O(n\log(d))$ time by utilizing a divide-and-conquer technique and the second to $O(n + \log(d))$ time by introducing parallelism.
+\citet{fast-similarity-search} presents two improvements to this: The first will improve the running time to $O(n\log(d))$ by utilizing a divide-and-conquer technique and the second to $O(n + \log(d))$ time by introducing parallelism.
 \subsection{Divide-and-Conquer}
-To explain how divide-and-conquer methods can be used to improve run-time, we must first introduce a bit mask from \cite{fast-similarity-search} defined like so:
+To explain how divide-and-conquer methods can be used to improve running time, we must first introduce a bit mask from \cite{fast-similarity-search} defined like so:
 $$m_{i,j} = \underbrace{0\dots 0}_{2^{j}-2^{i}}\underbrace{1\dots 1}_{2^i}\dots\underbrace{0\dots 0}_{2^{j}-2^{i}}\underbrace{1\dots 1}_{2^i}$$
 where $j > i$ and $j$ and $i$ are non-negative integers. The notation $m_{i}$ is a shorthand for $m_{i, i+1}$ and indicates a mask with an equal amount of 1's and 0's. By computing $w \land m_{i,j}$ for some word $w$ and some integers $i, j$, we can replace every other sub-string of size $2^i$ in the bit-string with 0's. This will be described as \textit{isolating} segments of size $2^i$.\\
 We will use this in the following operation:
@@ -44,14 +44,14 @@ The algorithm to calculate the cardinality can then be described like in algorit
 The simplest way to gain intuition of this algorithm is to prove it. A loop-invariant is presented like so:
 \begin{invariant}
 \label{thm:divide-invariant}
-At the $i$th iteration of the algorithm, each bitstring-segment of size $2^i$ of the word $w^{(i)}$ will contain the cardinality of the corresponding segment of the word $w^{(0)}$. Furthermore, the operation can be done in constant time.
+At the $i$th iteration of the algorithm, each bit-string-segment of size $2^i$ of the word $w^{(i)}$ will contain the cardinality of the corresponding segment of the word $w^{(0)}$. Furthermore, the operation can be done in constant time.
 \end{invariant}
 \begin{proof}
     When $i=0$, then each bit-string of size $2^0=1$ in $w^{(0)} = w$ will be $1$ if the bit is $1$ and $0$ if the bit is $0$. This proves our base case. \\
-    If at step $i$ the word $w^{(i)}$ contains $\frac{d}{2^i}$ segments of size $2^i$, then invariant \ref{thm:divide-invariant} will be upheld if we combine each segment with its neighbor to form a segment of size $2^{i+1}$. Since the cardinality of a combined bitstring is equal to the cardinality of its parts, we can divide all of the segments into pairs of size $2^{i+1}$ and add them together to form the new pair, which is done by the operation $T(w, m_i, 0) + T(w, m_i, 2^i)$ in constant time if the masks are pre-computed. This operation works because $T(w, m_i, 0)$ isolates every other segment of size $2^i$ starting from the first segment and $T(w, m_i, 2^i)$ isolates every other segment of size $2^i$ starting from the second segment.\\
+    If at step $i$ the word $w^{(i)}$ contains $\frac{d}{2^i}$ segments of size $2^i$, then invariant \ref{thm:divide-invariant} will be upheld if we combine each segment with its neighbor to form a segment of size $2^{i+1}$. Since the cardinality of a combined bit-string is equal to the cardinality of its parts, we can divide all of the segments into pairs of size $2^{i+1}$ and add them together to form the new pair, which is done by the operation $T(w, m_i, 0) + T(w, m_i, 2^i)$ in constant time if the masks are pre-computed. This operation works because $T(w, m_i, 0)$ isolates every other segment of size $2^i$ starting from the first segment and $T(w, m_i, 2^i)$ isolates every other segment of size $2^i$ starting from the second segment.\\
 \end{proof}
 When the algorithm terminates after $\log_2(d)$ iterations, the segments will have size $2^{\log_2{(d)}} = d$ and thus span the entire original word, which means that we have the bit-count of the original word. % TODO: Skriv noget omkring hvad der sker når d ikke er en faktor af 2
-\input{tikz/example1}
+% \input{tikz/example1}
 \subsection{Parallelism}
 To introduce parallelism into the algorithm, we must first realize the following: When two segments of $2^i$ bits gets combined, they will not need all of the $2^{i+1}$ bits to represent their sum. It is actually such that the bits used at iteration $i$ is exactly $i+1$.
 \begin{invariant}
@@ -140,7 +140,7 @@ j(i) =
 \end{cases}
 $$
 \begin{proof}
-When $i=6$, every word in $S$ contains $2^{6-3}=8$ words. Before lines 17-19 are run, each word from the original set is described as one bitstring segment of $2^{l(6)}=8$ bits each.
+When $i=6$, every word in $S$ contains $2^{6-3}=8$ words. Before lines 17-19 are run, each word from the original set is described as one bit-string segment of $2^{l(6)}=8$ bits each.
 Lines 17-19 then takes every other segment and shifts it $2^6=64$ bits to the left. Since this is the last iteration of the algorithm, the for loop in lines 25-29 gets run immediately after, which extracts each segment into $S'$ in the order of the least significant first for each word.\\
 This means that every other word from the original set will be shifted 4 indices later in $S'$, since 64 bits can contain $64/8=8$ words and half of them get shifted as well. 
 %When one calculates $j(i)$, and i is less than 8 and i is even, then we know that it has not been shifted. This means that the index we need to calculate must be one of the first 4 indices of $S'$. Since the order of the even elements of the original set is preserved, then we can just calculate half of the index to find 
@@ -149,19 +149,19 @@ This works, because the shifting makes such that $S'$ contains series of the fir
 %This works because $(i \gg 8)$ calculates which word in the final , which is multiplied by 4.
 \end{proof}
 If we were to use a word size that is large enough such that lines 17-19 get run again, then we would have to find a more complex computation to find the correct index. This will only happen when $d\geq16384$, so we can safely assume that this will not be relevant in the near future unless new computers get invented with such large word sizes.
-\subsection{Runtime Analysis}
-We can now move on to showing the run time of the algorithm. 
-First, we can try to find the run time of the first for-loop. At each iteration $i$, we will describe the amount of elements in $S^{(i)}$ as $n^{(i)}$ with $n=n^{(0)}$. We can then describe $n^{(i)}$ like so:
+\subsection{Time Complexity Analysis}
+We can now move on to showing the time complexity of the algorithm. 
+First, we can try to find the running time of the first for-loop. At each iteration $i$, we will describe the amount of elements in $S^{(i)}$ as $n^{(i)}$ with $n=n^{(0)}$. We can then describe $n^{(i)}$ like so:
 \begin{equation}
     n^{(i)}=\lceil \frac{n}{2^{i-l(i)}} \rceil
 \end{equation}
 which means that the first for-loop in total takes
 $$\sum_{i=2}^{\log_2(d)}\lceil \frac{n}{2^{i-l(i)}} \rceil$$
-Since the last loop iterates over every element of the original set, it must take $O(n)$ time. We can now derive the total run time:
+Since the last loop iterates over every element of the original set, it must take $O(n)$ time. We can now derive the total running time:
 $$O(n) + \sum_{i=2}^{\log_2(d)}\lceil \frac{n}{2^{i-l(i)}} \rceil$$
 $$=O(n) + \sum_{i=2}^{\log_2(d)}\lceil n2^{l(i)-i} \rceil$$
 $$\leq O(n) + \sum_{i=2}^{\log_2(d)}(n2^{l(i)-i} + 1)$$
 $$\leq O(n + \log(d)) + n\sum_{i=2}^{\log_2(d)}2^{l(i)-i}$$
 Now we use the fact that $l(i)$ is always the smallest number that satisfies $2^{l(i)} \geq i + 2$. Since it is the smallest number, then $2^{l(i)} < 2(i+2)$, which can be proved by contradiction: $2^{l(i)} \geq 2(i+2) \implies 2^{l(i)-1} \geq i+2$, which shows that there is a number that is 1 smaller than $l(i)$ that upholds the bound $2^{l(i)} \geq i + 2$. Therefore $2^{l(i)} < 2(i+2)$. We can now use this fact:
 $$\leq O(n + \log(d)) + n\sum_{i=0}^{\infty}\frac{2(i+2)}{2^{i}} = O(n+\log(d))$$
-The run time of the algorithm can therefore be bound to $O(n + \log(d))$.
+The running time of the algorithm can therefore be bound to $O(n + \log(d))$.

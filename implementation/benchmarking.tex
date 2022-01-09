@@ -9,5 +9,5 @@ The Rust library \texttt{Criterion.rs}\cite{criterion} was used to perform the b
     \item First of all, Criterion.rs integrates into standard Rust tooling easily and allows benchmarking on binary code built for production (e.g. with full optimizations and no debugging symbols)
     \item Secondly, Criterion.rs provides a compiler "opaque" functions that makes sure that repeated calls to the same function do not get optimized away.
     \item Criterion.rs handles warming up caches by running the algorithms multiple times before beginning to measure.
-    \item Lastly, Criterion.rs does not record the run time of a single operation - instead it runs multiple samples each consisting of a number of iterations. The run time is the calculated as the runtime per sample divided by the amount of iterations. 
+    \item Lastly, Criterion.rs does not record the execution time of a single operation - instead it runs multiple samples each consisting of a number of iterations. The running time is then calculated as the execution time per sample divided by the amount of iterations. 
 \end{itemize}

@@ -5,13 +5,13 @@ The MinHash algorithm is one of the classic solutions to the \textit{approximate
 It is based on the following theorem:
 \begin{theorem}
     \label{thm:minhash}
-    Let $g$ be a hash function from $V \cup W \rightarrow [M]$ for some $M \in \mathbb{Z}^+$ where $W\cup V\subseteq U$. Let $H(W)=\min_{w\in W} g(w)$. Then
+    Let $h$ be a universal hash function from $V \cup W \rightarrow [M]$ for some $M \in \mathbb{Z}^+$ where $W\cup V\subseteq U$ for some universe $U$. Let $H(W)=\min_{w\in W} h(w)$. Then
     $$Pr[H(W)=H(V)]=\frac{|V\cap W|}{|V \cup W|}= J(V,W)$$
 \end{theorem}
 \begin{proof}
     If you sample a random element $x \in V \cup W$, then you can find the probability that $x \in V\cap W$ like so:
     $$Pr[x\in V \cap W]=\frac{|V\cap W|}{|V \cup W|}= J(V,W)$$
-    When we calculate $H(W)$ and $H(V)$, the smallest value of the two will be $H(W\cup V)$. Since we use hash functions, this is essentially equivalent of sampling a random value from $W\cup V$. If this value is in the intersection $W\cap V$, then $H(W)$ and $H(V)$ will have picked the same element. This means that the probability of $H(W)=H(V)$ is the same as the probability of picking an element of the intersection from the union, which is $\frac{|V\cap W|}{|V\cup W|}=J(V,W)$
+    When we calculate $H(W)$ and $H(V)$, the smallest value of the two will be $H(W\cup V)$. Since we use hash functions, this is essentially equivalent of sampling a random value from $W\cup V$. This value is in the intersection $W\cap V$ if and only if $H(W)$ and $H(V)$ have picked the same element. This means that the probability of $H(W)=H(V)$ is the same as the probability of picking an element of the intersection from the union, which is $\frac{|V\cap W|}{|V\cup W|}=J(V,W)$.
 \end{proof}
 The MinHash algorithm works like so: First, preprocess the data by hashing each coordinate using $k$ different hash functions and saving the smallest value for each hash function as a sketch $S(A)=\langle H_0(A), \dots, H_{k-1}(A)\rangle$.
 To query a set $Q$, calculate its sketch $S(Q)$ and then calculate $$d(S(A),S(Q))=\frac{1}{k}\sum_{i\in [k]}[H_i(A)=H_i(Q)]$$\\
@@ -20,11 +20,12 @@ $$\mathbb{E}[d(S(A),S(Q))]=\mathbb{E}[\frac{1}{k}\sum_{i\in [k]}[H_i(A)=H_i(Q)]]
 $$=\frac{1}{k}\sum_{i\in [k]}\mathbb{E}[[H_i(A)=H_i(Q)]]$$
 $$=\frac{1}{k}\sum_{i\in [k]}J(A,Q)$$
 $$=J(A,Q)$$
-Since each hash function is independent, we can also use a Chernoff probability bound: Let us call each indicator variable $[H_i(A)=H_i(Q)]$ for $X_i$ and let $X=\sum_{i\in [k]}X_i$ and $\mu = \mathbb{E}[X]$. Then for any $\delta > 0$
-$$Pr[X > (1+\delta)\mu] < \left(\frac{e^\delta}{(1+\delta)^{(1+\delta)}}\right)^\mu$$
-$$Pr[X < (1-\delta)\mu] < \left(\frac{e^{-\delta}}{(1-\delta)^{(1-\delta)}}\right)^\mu$$
-The more hash functions we choose, the larger $k$ and $X$ will be, the larger $\mu$ will be and the stricter the bound will be. 
+% Since each hash function is independent, we can also use a Chernoff probability bound: Let us call each indicator variable $[H_i(A)=H_i(Q)]$ for $X_i$ and let $X=\sum_{i\in [k]}X_i$ and $\mu = \mathbb{E}[X]$. Then for any $\delta > 0$
+% $$Pr[X > (1+\delta)\mu] < \left(\frac{e^\delta}{(1+\delta)^{(1+\delta)}}\right)^\mu$$
+% $$Pr[X < (1-\delta)\mu] < \left(\frac{e^{-\delta}}{(1-\delta)^{(1-\delta)}}\right)^\mu$$
+% The more hash functions we choose, the larger $k$ and $X$ will be, the larger $\mu$ will be and the stricter the bound will be. 
 \subsubsection{Implementation with the LSH framework}
-For any hash function $h$ picked randomly from $\mathcal{H}$, we know that $Pr[h(A)=h(B)]=J(A,B)$ as shown earlier. This must mean that $h$ is $(j_1, j_2, j_1, j_2)$-sensitive. If we then consider a function $g$ picked randomly containing $h_0, \dots, h_{k-1}$ hash functions. We can then derive that $Pr[g(a)=g(b)]=J(A,B)^k$. This means that $g$ is $(j_1, j_2, j_1^k, j_2^k)$-sensitive. By choosing $k=\lceil \frac{\log_2(n)}{\log_2(1/j_2)} \rceil$, we can derive that $g$ now is $(j_1, j_2, O(1/n^\rho), 1/n)$-sensitive where $\rho=\frac{\log_2{1/j_1}}{\log_2{1/j_2}}$. % TODO: Bevis dette
-This has the consequence that the error probability now is dependendant on $1/n$, which can be converted to a constant error probability by repeating the experiment multiple times. By keeping $l=\lceil n^\rho \rceil$ different data structures, we reduce the error probability to $O(1)$.
-This means that the run time needed to create the required sketches is $O(l\cdot k \cdot d)=O(n^\rho \log_2(n)|Q|)$ per data point. The query time is now $O(l\cdot k \cdot |Q|)=O(n^\rho \log_2(n)|Q|)$ since we need to calculate a min-hash value of $|Q|$ for each of the $l$ sketches which takes $O(k\cdot |Q|)$ time per sketch. This process will lead to $l$ different candidate points, from which a true positive can be linearily searched in $O(l\cdot |Q|)$ time.
+For any hash function $H$ defined as before, we know that $Pr[H(A)=H(B)]=J(A,B)$ as shown earlier. This must mean that $H$ is $(j_1, j_2, j_1, j_2)$-sensitive. If we then consider a function $g$ picked randomly containing $H_0, \dots, H_{k-1}$ hash functions. 
+We can then derive that $Pr[g(A)=g(B)]=J(A,B)^k$. A union bound can then show that $g$ is $(j_1, j_2, j_1^k, j_2^k)$-sensitive. By choosing $k=\lceil \frac{\log_2(n)}{\log_2(1/j_2)} \rceil$, we can derive that $g$ now is $(j_1, j_2, O(1/n^\rho), 1/n)$-sensitive where $\rho=\frac{\log_2{1/j_1}}{\log_2{1/j_2}}$. % TODO: Bevis dette
+This has the consequence that both error probabilities ($r_1$ and $r_2$ from definition \ref{thm:sensitive-hash}) are dependant on $1/n$, which can be converted to a constant error probability by keeping multiple independent data structures and returning the best result. By keeping $l=\lceil n^\rho \rceil$ different data structures, we reduce the error probability to $O(1)$.
+This means that the running time needed to create the required sketches is $O(l\cdot k \cdot |A|)=O(n^\rho \log_2(n)|A|)$ per data point $A \in \mathcal{F}$. The query time is now $O(l\cdot k \cdot |Q|)=O(n^\rho \log_2(n)|Q|)$ since we need to calculate a min-hash value of $|Q|$ for each of the $l$ sketches and look up a corresponding candidate set which takes $O(k\cdot |Q|)$ time per sketch. This process will lead to $l$ different candidate set, from which a true positive can be linearily searched in $O(l\cdot |Q|)$ time if a hash table has been created for each $|A|$ during the preprocessing step. This algorithm has a constant 1-sided error probability, since there is a constant probability that a set where $J(A,Q) > j_2$ hashes to a different value $g(A) \not = g(Q)$ and will therefore not be nominated as a candidate set. If the algorithm returns a set, we know that it for sure has $J(A,Q) \geq j_2$ however.
