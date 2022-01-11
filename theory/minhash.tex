@@ -5,19 +5,22 @@ The MinHash algorithm is one of the classic solutions to the \textit{approximate
 It is based on the following theorem:
 \begin{theorem}
     \label{thm:minhash}
-    Let $h$ be a universal hash function from $V \cup W \rightarrow [M]$ for some $M \in \mathbb{Z}^+$ where $W\cup V\subseteq U$ for some universe $U$. Let $H(W)=\min_{w\in W} h(w)$. Then
+    Let $h$ be a universal hash function from $V \cup W \rightarrow [M]$ for some $M \in \mathbb{Z}^+$ where $W\cup V\subseteq U$ for some universe $U$. 
+    Let $H(W)=\min_{w\in W} h(w)$. Then
     $$Pr[H(W)=H(V)]=\frac{|V\cap W|}{|V \cup W|}= J(V,W)$$
 \end{theorem}
 \begin{proof}
     If you sample a random element $x \in V \cup W$, then you can find the probability that $x \in V\cap W$ like so:
     $$Pr[x\in V \cap W]=\frac{|V\cap W|}{|V \cup W|}= J(V,W)$$
-    When we calculate $H(W)$ and $H(V)$, the smallest value of the two will be $H(W\cup V)$. Since we use hash functions, this is essentially equivalent of sampling a random value from $W\cup V$. This value is in the intersection $W\cap V$ if and only if $H(W)$ and $H(V)$ have picked the same element. This means that the probability of $H(W)=H(V)$ is the same as the probability of picking an element of the intersection from the union, which is $\frac{|V\cap W|}{|V\cup W|}=J(V,W)$.
+    When we calculate $H(W)$ and $H(V)$, the smallest value of the two will be $H(W\cup V)$. Since we use hash functions, this is essentially equivalent of sampling a random value from $W\cup V$. Assuming no collisions, this value will be in the intersection $W\cap V$ if and only if $H(W)$ and $H(V)$ have picked the same element. This means that the probability of $H(W)=H(V)$ is the same as the probability of picking an element of the intersection from the union, which is $\frac{|V\cap W|}{|V\cup W|}=J(V,W)$.
 \end{proof}
-The MinHash algorithm works like so: First, preprocess the data by hashing each coordinate using $k$ different hash functions and saving the smallest value for each hash function as a sketch $S(A)=\langle H_0(A), \dots, H_{k-1}(A)\rangle$.
+The MinHash algorithm works like so: First, preprocess each set $A\in \mathcal{F}$ by hashing each coordinate using $k$ universal hash functions picked uniformly at random, saving the smallest value for each hash function as a sketch $S(A)=\langle H_0(A), \dots, H_{k-1}(A)\rangle$.
 To query a set $Q$, calculate its sketch $S(Q)$ and then calculate $$d(S(A),S(Q))=\frac{1}{k}\sum_{i\in [k]}[H_i(A)=H_i(Q)]$$\\
-The expected value of this will then be the Jaccard Similarity:
+We can then derive the expected value of this to be the Jaccard Similarity:
 $$\mathbb{E}[d(S(A),S(Q))]=\mathbb{E}[\frac{1}{k}\sum_{i\in [k]}[H_i(A)=H_i(Q)]]$$
+Using linearity of expectation:
 $$=\frac{1}{k}\sum_{i\in [k]}\mathbb{E}[[H_i(A)=H_i(Q)]]$$
+Using theorem \ref{thm:minhash}:
 $$=\frac{1}{k}\sum_{i\in [k]}J(A,Q)$$
 $$=J(A,Q)$$
 % Since each hash function is independent, we can also use a Chernoff probability bound: Let us call each indicator variable $[H_i(A)=H_i(Q)]$ for $X_i$ and let $X=\sum_{i\in [k]}X_i$ and $\mu = \mathbb{E}[X]$. Then for any $\delta > 0$
@@ -25,7 +28,51 @@ $$=J(A,Q)$$
 % $$Pr[X < (1-\delta)\mu] < \left(\frac{e^{-\delta}}{(1-\delta)^{(1-\delta)}}\right)^\mu$$
 % The more hash functions we choose, the larger $k$ and $X$ will be, the larger $\mu$ will be and the stricter the bound will be. 
 \subsubsection{Implementation with the LSH framework}
-For any hash function $H$ defined as before, we know that $Pr[H(A)=H(B)]=J(A,B)$ as shown earlier. This must mean that $H$ is $(j_1, j_2, j_1, j_2)$-sensitive. If we then consider a function $g$ picked randomly containing $H_0, \dots, H_{k-1}$ hash functions. 
-We can then derive that $Pr[g(A)=g(B)]=J(A,B)^k$. A union bound can then show that $g$ is $(j_1, j_2, j_1^k, j_2^k)$-sensitive. By choosing $k=\lceil \frac{\log_2(n)}{\log_2(1/j_2)} \rceil$, we can derive that $g$ now is $(j_1, j_2, O(1/n^\rho), 1/n)$-sensitive where $\rho=\frac{\log_2{1/j_1}}{\log_2{1/j_2}}$. % TODO: Bevis dette
-This has the consequence that both error probabilities ($r_1$ and $r_2$ from definition \ref{thm:sensitive-hash}) are dependant on $1/n$, which can be converted to a constant error probability by keeping multiple independent data structures and returning the best result. By keeping $l=\lceil n^\rho \rceil$ different data structures, we reduce the error probability to $O(1)$.
-This means that the running time needed to create the required sketches is $O(l\cdot k \cdot |A|)=O(n^\rho \log_2(n)|A|)$ per data point $A \in \mathcal{F}$. The query time is now $O(l\cdot k \cdot |Q|)=O(n^\rho \log_2(n)|Q|)$ since we need to calculate a min-hash value of $|Q|$ for each of the $l$ sketches and look up a corresponding candidate set which takes $O(k\cdot |Q|)$ time per sketch. This process will lead to $l$ different candidate set, from which a true positive can be linearily searched in $O(l\cdot |Q|)$ time if a hash table has been created for each $|A|$ during the preprocessing step. This algorithm has a constant 1-sided error probability, since there is a constant probability that a set where $J(A,Q) > j_2$ hashes to a different value $g(A) \not = g(Q)$ and will therefore not be nominated as a candidate set. If the algorithm returns a set, we know that it for sure has $J(A,Q) \geq j_2$ however.
+For a function $H\in \mathcal{H}$ from some family $\mathcal{H}$ defined as $H(W)=\min_{w\in W}h(w)$ as in theorem \ref{thm:minhash}, we know that $Pr[H(A)=H(B)]=J(A,B)$ as per theorem \ref{thm:minhash}. This must mean that $\mathcal{H}$ is $(j_1, j_2, j_1, j_2)$-sensitive for some values $0< j_2 < j_1 < 1$ as per definition \ref{thm:sensitive-hash} and theorem \ref{thm:minhash}:
+\begin{itemize}
+    \item If $J(W,V)\geq j_1$, then $Pr[H(W)=H(V)]\geq j_1$ 
+    \item If $J(W,V) \leq j_2$, then $Pr[H(W)=H(V)] \leq j_2$.
+\end{itemize}
+
+We can then consider a function $g \in \mathcal{G}$ from some family $\mathcal{G}$ defined as $g(W) = \langle H_0(W), \dots, H_{k-1}(W) \rangle$ where functions $H_0 \dots H_{k-1}$ are picked uniformly at random from $\mathcal{H}$. An evaluation of any $g\in \mathcal{G}$ will be called a ``sketch'' from now on. Since the functions $H_0 \dots H_{k-1}$ are independent, we can use Bayes' theorem to derive that:
+$$Pr[g(W)=g(V)] = Pr[\bigcap_{H \in g}H(W) = H(V)]$$
+$$=\prod_{H\in g}Pr[H(W) = H(V)]$$
+$$=\prod_{H\in g}J(W,V)=J(W,V)^k$$
+This means that $\mathcal{G}$ is $(j_1, j_2, j_1^k, j_2^k)$-sensitive for some $k\in \mathbb{Z}^+$ since $J(W,V)$ and $j_1, j_2$ are non-negative:
+\begin{itemize}
+    \item If $J(W,V) \geq j_1$, then $J(W,V)^k \geq j_1^k$, which means that $Pr[g(W)=g(V)] \geq j_1^k$
+    \item If $J(W,V) \leq j_2$, then $J(W,V)^k \leq j_2^k$, which means that $Pr[g(W)=g(V)] \leq j_2^k$
+\end{itemize}
+By choosing $k=\lceil \frac{\log_2(n)}{\log_2(1/j_2)} \rceil$, we can derive that $g$ now is $(j_1, j_2, O(1/n^\rho), 1/n)$-sensitive where $\rho=\frac{\log_2{1/j_1}}{\log_2{1/j_2}}$.
+$$j_1^k = j_1^{\lceil\frac{\log_2(n)}{\log_2(1/j_2)} \rceil}\geq j_1^{\frac{\log_2(n)}{\log_2(1/j_2)}}$$
+$$=j_1^{\frac{\log_2{(n)}}{\log_2{(1/j_2)}}\cdot\frac{\log_2{(1/j_1)}}{\log_2{(1/j_1)}}}$$
+$$=j_1^{\frac{\log_2{(1/j_1)}}{\log_2{(1/j_2)}}\cdot-\frac{\log_2{(n)}}{\log_2{(j_1)}}}$$
+$$=j_1^{-\rho\frac{\log_2{(n)}}{\log_2{(j_1)}}}$$
+$$=j_1^{-\rho\log_{j_1}{(n)}}$$
+$$=\frac{1}{n^\rho}=O(1/n^\rho)$$
+$$j_2^k\leq j_2 \cdot j_2^{\frac{\log_2(n)}{\log_2(1/j_2)}}=j_2\cdot j_2^{-\frac{\log_2{(n)}}{\log_2{(j_2)}}}=\frac{j_2}{n}\leq 1/n$$
+%This has the consequence that both error probabilities ($r_1$ and $r_2$ from definition \ref{thm:sensitive-hash}) are dependent on $1/n$. 
+Now, imagine $g_0, \dots g_{l-1} \in \mathcal{G}$ picked uniformly at random where $l=\lceil n^\rho \rceil$. If we calculate the sketch $g_i(A)$ for each $A\in \mathcal{F}$, $i\in [l]$, we will have $O(n\cdot l)$ sketches where $n=|F|$. This is our LSH data structure. \\
+For each value $i\in [l]$, a hash table should also be created to look up a set stored at index $g_i(Q)$ for some query set $Q$ in constant time.
+Furthermore, each set $A\in \mathcal{F}$ stored in this hashtable should have an associated hash table over its elements.\\
+Creating the data structure takes $O(\sum_{A\in \mathcal{F}}|A| \cdot l)$ time and space during the preprocessing step.\\
+To query, we first calculate $l$ sketches of $Q$, $g_0(Q), \dots, g_{l-1}(Q)$, which takes $O(k \cdot l \cdot |Q|)$ time. These sketches can be used to retrieve $l$ candidate sets $\mathcal{M} = \{ A_0, \dots A_{l-1}\}$ from each of the $l$ outermost hash tables. \\
+For each $A\in \mathcal{M}$, the Jaccard similarity can be computed in $O(|Q|)$ time by computing the size of the intersection using the associated hash table to $A$ and computing the size of the union by the inclusion-exclusion principle if the size of $A$ is known.\\
+When an element $A\in \mathcal{M}$ is found such that $J(A,Q) \geq j_2$, the algorithm can return.\\
+We can now calculate the error probability of the algorithm. If a set $A \in \mathcal{F}$ exists such that $J(A,Q) \leq j_2$, we can be sure that it has a $O(1/n)$ probability to get chosen as the candidate set for some $g_0 \dots g_{l-1}$, due to $g$'s $(j_1, j_2, O(1/n^\rho), 1/n)$ sensitivity. Let $\mathcal{F}_{bad}$ denote the subset of $\mathcal{F}$ containing all the sets $A\in \mathcal{F}$ where $J(A,Q) \leq j_2$. Let a "bad match" denote a set $A\in \mathcal{F}$ where $J(A,Q) \leq j_2$ and $g(A) = g(Q)$. 
+Let us then compute the amount of expected bad matches:
+$$E[\sum_{A\in \mathcal{F}_{bad}}[g(A) = g(Q)]]$$
+Linearity of expectation:
+$$=\sum_{A\in \mathcal{F}_{bad}}E[[g(A) = g(Q)]]$$
+$$\leq\sum_{A\in \mathcal{F}_{bad}}O(1/n)$$
+There can at most be $n=|F|$ bad matches:
+$$\leq O(1/n)^n = O(1)$$
+We can therefore expect a constant amount of bad matches among the $l$ candidate sets.\\
+We can also calculate the probability of a set $A\in \mathcal{F}$ where $g_i(A) = g_i(Q)$ being among the candidate sets:
+Since $j_2 < j_1 \leq J(A,Q)$, then 
+$$Pr[g_i(A) = g_i(Q)] = O(1/n^\rho)\quad \textrm{for some }i\in [l]$$
+The probability that it gets chosen as at least one of the $l$ candidate sets:
+$$Pr[\bigcup_{i\in [l]} g_i(A) = g_i(Q)] \leq \sum_{i\in [l]} O(1/n^\rho) = O(l/n^\rho) = O(1)$$
+There is therefore at most a constant probability that a positive match is found if one exists.
+% which can be converted to a constant error probability by keeping multiple independent data structures and returning the best result. By keeping $l=\lceil n^\rho \rceil$ different data structures, we reduce the error probability to $O(1)$.
+% This means that the running time needed to create the required sketches is $O(l\cdot k \cdot |A|)=O(n^\rho \log_2(n)|A|)$ per data point $A \in \mathcal{F}$. The query time is now $O(l\cdot k \cdot |Q|)=O(n^\rho \log_2(n)|Q|)$ since we need to calculate a min-hash value of $|Q|$ for each of the $l$ sketches and look up a corresponding candidate set which takes $O(k\cdot |Q|)$ time per sketch. This process will lead to $l$ different candidate set, from which a true positive can be linearily searched in $O(l\cdot |Q|)$ time if a hash table has been created for each $|A|$ during the preprocessing step. This algorithm has a constant 1-sided error probability, since there is a constant probability that a set where $J(A,Q) > j_2$ hashes to a different value $g(A) \not = g(Q)$ and will therefore not be nominated as a candidate set. If the algorithm returns a set, we know that it for sure has $J(A,Q) \geq j_2$ however.
