@@ -43,13 +43,13 @@ This means that $\mathcal{G}$ is $(j_1, j_2, j_1^k, j_2^k)$-sensitive for some $
     \item If $J(W,V) \geq j_1$, then $J(W,V)^k \geq j_1^k$, which means that $Pr[g(W)=g(V)] \geq j_1^k$
     \item If $J(W,V) \leq j_2$, then $J(W,V)^k \leq j_2^k$, which means that $Pr[g(W)=g(V)] \leq j_2^k$
 \end{itemize}
-By choosing $k=\lceil \frac{\log_2(n)}{\log_2(1/j_2)} \rceil$, we can derive that $g$ now is $(j_1, j_2, O(1/n^\rho), 1/n)$-sensitive where $\rho=\frac{\log_2{1/j_1}}{\log_2{1/j_2}}$.
+By choosing $k=\lceil \frac{\log_2(n)}{\log_2(1/j_2)} \rceil$, we can derive that $\mathcal{G}$ now is $(j_1, j_2, 1/n^\rho, 1/n)$-sensitive where $\rho=\frac{\log_2{1/j_1}}{\log_2{1/j_2}}$.
 $$j_1^k = j_1^{\lceil\frac{\log_2(n)}{\log_2(1/j_2)} \rceil}\geq j_1^{\frac{\log_2(n)}{\log_2(1/j_2)}}$$
 $$=j_1^{\frac{\log_2{(n)}}{\log_2{(1/j_2)}}\cdot\frac{\log_2{(1/j_1)}}{\log_2{(1/j_1)}}}$$
 $$=j_1^{\frac{\log_2{(1/j_1)}}{\log_2{(1/j_2)}}\cdot-\frac{\log_2{(n)}}{\log_2{(j_1)}}}$$
 $$=j_1^{-\rho\frac{\log_2{(n)}}{\log_2{(j_1)}}}$$
 $$=j_1^{-\rho\log_{j_1}{(n)}}$$
-$$=\frac{1}{n^\rho}=O(1/n^\rho)$$
+$$=\frac{1}{n^\rho}$$
 $$j_2^k\leq j_2 \cdot j_2^{\frac{\log_2(n)}{\log_2(1/j_2)}}=j_2\cdot j_2^{-\frac{\log_2{(n)}}{\log_2{(j_2)}}}=\frac{j_2}{n}\leq 1/n$$
 %This has the consequence that both error probabilities ($r_1$ and $r_2$ from definition \ref{thm:sensitive-hash}) are dependent on $1/n$. 
 Now, imagine $g_0, \dots g_{l-1} \in \mathcal{G}$ picked uniformly at random where $l=\lceil n^\rho \rceil$. If we calculate the sketch $g_i(A)$ for each $A\in \mathcal{F}$, $i\in [l]$, we will have $O(n\cdot l)$ sketches where $n=|F|$. This is our LSH data structure. \\
@@ -59,20 +59,28 @@ Creating the data structure takes $O(\sum_{A\in \mathcal{F}}|A| \cdot l)$ time a
 To query, we first calculate $l$ sketches of $Q$, $g_0(Q), \dots, g_{l-1}(Q)$, which takes $O(k \cdot l \cdot |Q|)$ time. These sketches can be used to retrieve $l$ candidate sets $\mathcal{M} = \{ A_0, \dots A_{l-1}\}$ from each of the $l$ outermost hash tables. \\
 For each $A\in \mathcal{M}$, the Jaccard similarity can be computed in $O(|Q|)$ time by computing the size of the intersection using the associated hash table to $A$ and computing the size of the union by the inclusion-exclusion principle if the size of $A$ is known.\\
 When an element $A\in \mathcal{M}$ is found such that $J(A,Q) \geq j_2$, the algorithm can return.\\
-We can now calculate the error probability of the algorithm. If a set $A \in \mathcal{F}$ exists such that $J(A,Q) \leq j_2$, we can be sure that it has a $O(1/n)$ probability to get chosen as the candidate set for some $g_0 \dots g_{l-1}$, due to $g$'s $(j_1, j_2, O(1/n^\rho), 1/n)$ sensitivity. Let $\mathcal{F}_{bad}$ denote the subset of $\mathcal{F}$ containing all the sets $A\in \mathcal{F}$ where $J(A,Q) \leq j_2$. Let a "bad match" denote a set $A\in \mathcal{F}$ where $J(A,Q) \leq j_2$ and $g(A) = g(Q)$. 
-Let us then compute the amount of expected bad matches:
-$$E[\sum_{A\in \mathcal{F}_{bad}}[g(A) = g(Q)]]$$
-Linearity of expectation:
-$$=\sum_{A\in \mathcal{F}_{bad}}E[[g(A) = g(Q)]]$$
-$$\leq\sum_{A\in \mathcal{F}_{bad}}O(1/n)$$
-There can at most be $n=|F|$ bad matches:
-$$\leq O(1/n)^n = O(1)$$
-We can therefore expect a constant amount of bad matches among the $l$ candidate sets.\\
-We can also calculate the probability of a set $A\in \mathcal{F}$ where $g_i(A) = g_i(Q)$ being among the candidate sets:
-Since $j_2 < j_1 \leq J(A,Q)$, then 
-$$Pr[g_i(A) = g_i(Q)] = O(1/n^\rho)\quad \textrm{for some }i\in [l]$$
-The probability that it gets chosen as at least one of the $l$ candidate sets:
-$$Pr[\bigcup_{i\in [l]} g_i(A) = g_i(Q)] \leq \sum_{i\in [l]} O(1/n^\rho) = O(l/n^\rho) = O(1)$$
-There is therefore at most a constant probability that a positive match is found if one exists.
+% Let us try to calculate how many of the candidate sets are so-called ``bad matches'' e.g. sets $A\in \mathcal{F}$ where $A \leq j_2$. Let $\mathcal{F}_{bad} = \{ A \in \mathcal{F} \mid J(A,Q) \leq j_2 \}$. Let $X_i(A) = [g_i(A) = g_i(Q)]$ for $i\in [l]$ and $A \in \mathcal{F}_{bad}$ and $X=\sum_{A \in \mathcal{F}_{bad}}\sum_{i\in [l]}X_i(A)$. Then we can calculate the expected amount of the $l$ sketches that contains a set $A\in \mathcal{F}_{bad}$.
+% $$\mathbb{E}[X] = \mathbb{E}[\sum_{i\in [l]}\sum_{A \in \mathcal{F}_{bad}}X_i(A)] = \sum_{i\in [l]}\sum_{A \in \mathcal{F}_{bad}}\mathbb{E}[X_i(A)]$$
+% Since $\mathcal{G}$ is $(j_1, j_2, 1/n^\rho, 1/n)$-sensitive, then $Pr[g_i(A) = g_i(Q)] \leq 1/n$ when $A\in \mathcal{F}_{bad}$:
+% $$\leq \sum_{i\in [l]}\sum_{A \in \mathcal{F}_{bad}}1/n = \lceil n^\rho \rceil \cdot |\mathcal{F}_{bad}|\cdot 1/n \leq (n^{\rho - 1} + 1/n)|\mathcal{F}_{bad}| = $$
+% We can try to compute the expected amount of bad matches. If a set $A \in \mathcal{F}$ exists such that $J(A,Q) \leq j_2$, we can be sure that it has at most a $1/n$ probability to get chosen as the candidate set for some $g_0 \dots g_{l-1}$, due to $g$'s $(j_1, j_2, 1/n^\rho, 1/n)$ sensitivity. Let $\mathcal{F}_{bad}$ denote the subset of $\mathcal{F}$ containing all the sets $A\in \mathcal{F}$ where $J(A,Q) \leq j_2$. Let a "bad match" denote a set $A\in \mathcal{F}$ where $J(A,Q) \leq j_2$ and $g(A) = g(Q)$, then we derive the following using linearity of expectation:
+% $$E[\sum_{A\in \mathcal{F}_{bad}}[g(A) = g(Q)]]$$
+% $$=\sum_{A\in \mathcal{F}_{bad}}E[[g(A) = g(Q)]]$$
+% $$\leq \sum_{A\in \mathcal{F}_{bad}}1/n$$
+% There can at most be $n=|F|$ bad matches:
+% $$\leq n\cdot 1/n = 1$$
+% We can therefore at most expect a constant amount of bad matches among the $l$ candidate sets.\\
+% We can also calculate the expected amount of ``good matches'' if a set $A\in \mathcal{F}$ exists where $J(A, Q) > j_2$:
+% Since $j_2 < j_1$, then:
+% $$Pr[g_i(A) = g_i(Q)] \geq 1/n^\rho\quad \textrm{for any }i\in [l]$$
+% $$\mathbb{E}[X]=\mathbb{E}[\sum_{i \in [l]}X_i] = \sum_{i \in [l]}\mathbb{E}[X_i] = \sum_{i \in [l]}Pr[g_i(A) = g_i(Q)] \geq l(\frac{1}{n^\rho}) = 1$$
+% Therefore, we can expect at least constant amount of the $l$ candidate sets to be the set $A$.
+
+
+
+
+% Since each of the $l$ functions are independent, we can then use the Chernoff bound with $\delta = \frac{1}{\mu}$:
+% $$Pr[X \leq (1-\delta)\mu] \leq e^{-\frac{\delta^2\mu}{2}}$$
+% $$\Leftrightarrow Pr[X \leq (1-\delta)] \leq e^{-\frac{\delta^2\mu}{2}}$$
 % which can be converted to a constant error probability by keeping multiple independent data structures and returning the best result. By keeping $l=\lceil n^\rho \rceil$ different data structures, we reduce the error probability to $O(1)$.
 % This means that the running time needed to create the required sketches is $O(l\cdot k \cdot |A|)=O(n^\rho \log_2(n)|A|)$ per data point $A \in \mathcal{F}$. The query time is now $O(l\cdot k \cdot |Q|)=O(n^\rho \log_2(n)|Q|)$ since we need to calculate a min-hash value of $|Q|$ for each of the $l$ sketches and look up a corresponding candidate set which takes $O(k\cdot |Q|)$ time per sketch. This process will lead to $l$ different candidate set, from which a true positive can be linearily searched in $O(l\cdot |Q|)$ time if a hash table has been created for each $|A|$ during the preprocessing step. This algorithm has a constant 1-sided error probability, since there is a constant probability that a set where $J(A,Q) > j_2$ hashes to a different value $g(A) \not = g(Q)$ and will therefore not be nominated as a candidate set. If the algorithm returns a set, we know that it for sure has $J(A,Q) \geq j_2$ however.
