@@ -1,16 +1,14 @@
 \section{Parallel Bit Counting}
-In the same article where \citet{fast-similarity-search} presents the improvements for algorithms with an $o(\varepsilon)$ error probability, a parallel algorithm to compute the cardinality of a bit-string is also presented. It is only described by recurrences, and omits any implementation details. I will try to describe the same algorithm in a much simpler fashion and prove its correctness and time complexity while doing it. This means that this section is my own interpretation of the algorithm, proofs and analysis described in \cite{fast-similarity-search}.
+In the same article where \citet{fast-similarity-search} presents the improvements for algorithms with an $o(\varepsilon)$ error probability, a parallel algorithm to compute the cardinality of a bit-string is also presented. It is only described by recurrences, and omits implementation details. I will try to describe the same algorithm in a much simpler fashion and prove its correctness and time complexity while doing it. This means that this section is my own interpretation of the algorithm, proofs and analysis described in \cite{fast-similarity-search}.
 A naive algorithm to perform bit-counting could be described like in algorithm \ref{alg:naive-cardinality}.
 \begin{algorithm}[H]
 \caption{A naive linear time algorithm}\label{alg:naive-cardinality}
 \begin{algorithmic}[1]
 \Function{Cardinality}{$w$, $d$} \Comment{$w$ is the input word, $d$ is the word-size}
 \State $x \gets 0$
-\State $i \gets 0$
-\While{$i \leq d$}
+\For{$i \in [d]$}
 \State $x \gets x + (w \gg i) \land 1$
-\State $i \gets i + 1$
-\EndWhile
+\EndFor
 \State \Return $x$
 \EndFunction
 \end{algorithmic}
@@ -18,25 +16,24 @@ A naive algorithm to perform bit-counting could be described like in algorithm \
 This algorithm trivially runs in linear time to the dimensionality\footnote{For the rest of this project, it is assumed that $d$ is a power of 2.} $d$ of the input word $w$. For $n$ words of size $d$, this algorithm runs in $O(nd)$ time.
 \citet{fast-similarity-search} presents two improvements to this: The first will improve the running time to $O(n\log(d))$ by utilizing a divide-and-conquer technique and the second to $O(n + \log(d))$ time by introducing parallelism.
 \subsection{Divide-and-Conquer}
-To explain how divide-and-conquer methods can be used to improve running time, we must first introduce a bit mask from \cite{fast-similarity-search} defined like so:
-$$m_{i,j} = \underbrace{0\dots 0}_{2^{j}-2^{i}}\underbrace{1\dots 1}_{2^i}\dots\underbrace{0\dots 0}_{2^{j}-2^{i}}\underbrace{1\dots 1}_{2^i}$$
-where $j > i$ and $j$ and $i$ are non-negative integers. The notation $m_{i}$ is a shorthand for $m_{i, i+1}$ and indicates a mask with an equal amount of 1's and 0's. By computing $w \land m_{i,j}$ for some word $w$ and some integers $i, j$, we can replace every other sub-string of size $2^i$ in the bit-string with 0's. This will be described as \textit{isolating} segments of size $2^i$.\\
+To explain how divide-and-conquer methods can be used to improve running time, we must first introduce a word-sized bit mask from \cite{fast-similarity-search} that is defined like so:
+$$m_{i,j} = \underbrace{0\dots 0}_{2^{j}-2^{i}}\underbrace{1\dots 1}_{2^i}\dots\underbrace{0\dots 0}_{2^{j}-2^{i}}\underbrace{1\dots 1_2}_{2^i}$$
+where $j > i$ and $j$ and $i$ are non-negative integers. The notation $m_{i}$ is a shorthand for $m_{i, i+1}$ and indicates a mask with an equal amount of 1's and 0's. By computing $w \land m_{i,j}$ for some word $w$ and some integers $i, j$, we can replace every other sub-string of size $2^j-2^i$ in the bit-string with 0's. This will be described as \textit{isolating} segments of size $2^i$.\\
 We will use this in the following operation:
 \begin{equation}
     T(w, m, k) = (w\gg k) \land m
 \end{equation}
 This operation isolates the segments indicated by the bit-mask starting from the $k$th position of the word $w$. This is useful for partitioning a bit-string, since any word now can be described as
 $$w=T(w, m_i, 0) + (T(w, m_i, 2^i) \ll 2^i)$$
+Notice that even though we use addition, overflows are impossible since the segment pattern of $T(w, m_i, 0)$ and $(T(w, m_i, 2^i) \ll 2^i)$ do not overlap.\\
 The algorithm to calculate the cardinality can then be described like in algorithm \ref{alg:divide-and-conquer-cardinality}
 \begin{algorithm}[H]
 \caption{A divide-and-conquer approach}\label{alg:divide-and-conquer-cardinality}
 \begin{algorithmic}[1]
 \Function{Cardinality}{$w$, $d$} \Comment{$w$ is the input word, $d$ is the word-size}
-\State $i \gets 0$
-\While{$i \leq \log_2(d)$}
+\For{$i \in [\log_2(d)]$}
 \State $w \gets T(w, m_i, 0) + T(w, m_i, 2^i)$
-\State $i \gets i + 1$
-\EndWhile
+\EndFor
 \State \Return $w$
 \EndFunction
 \end{algorithmic}
@@ -44,26 +41,43 @@ The algorithm to calculate the cardinality can then be described like in algorit
 The simplest way to gain intuition of this algorithm is to prove it. A loop-invariant is presented like so:
 \begin{invariant}
 \label{thm:divide-invariant}
-At the $i$th iteration of the algorithm, each bit-string-segment of size $2^i$ of the word $w^{(i)}$ will contain the cardinality of the corresponding segment of the word $w^{(0)}$. Furthermore, the operation can be done in constant time.
+At the beginning of the $i$th iteration of the algorithm, the word $w^{(i)}$ can be regarded as consisting of $d/2^i$ bit-string-segments of size $2^i$, that represents the cardinality of the corresponding segments of the word $w^{(0)}$.
 \end{invariant}
 \begin{proof}
-    When $i=0$, then each bit-string of size $2^0=1$ in $w^{(0)} = w$ will be $1$ if the bit is $1$ and $0$ if the bit is $0$. This proves our base case. \\
-    If at step $i$ the word $w^{(i)}$ contains $\frac{d}{2^i}$ segments of size $2^i$, then invariant \ref{thm:divide-invariant} will be upheld if we combine each segment with its neighbor to form a segment of size $2^{i+1}$. Since the cardinality of a combined bit-string is equal to the cardinality of its parts, we can divide all of the segments into pairs of size $2^{i+1}$ and add them together to form the new pair, which is done by the operation $T(w, m_i, 0) + T(w, m_i, 2^i)$ in constant time if the masks are pre-computed. This operation works because $T(w, m_i, 0)$ isolates every other segment of size $2^i$ starting from the first segment and $T(w, m_i, 2^i)$ isolates every other segment of size $2^i$ starting from the second segment.\\
+    \textbf{Base case}: When $i=0$, then each bit-string of size $2^0=1$ in $w^{(0)} = w$ will be $1$ if the bit is $1$ and $0$ if the bit is $0$. This proves our base case. \\
+    \textbf{Induction step}:
+    %If at step $i$ the word $w^{(i)}$ contains $\frac{d}{2^i}$ segments of size $2^i$, then invariant \ref{thm:divide-invariant} will be upheld if we combine each segment with its neighbor to form a segment of size $2^{i+1}$. 
+    At step $i$, invariant \ref{thm:divide-invariant} states that the word $w^{(i)}$ contains $\frac{d}{2^i}$ segments of size $2^i$. The operation $T(w, m_i, 0)$ will then isolate exactly every other segment of size $2^i$. The operation $T(w, m_i, 2^i)$ will isolate the remaining segments and bit-shift them such that the segments align with the segments isolated by $T(w, m_i, 0)$.\\
+    By adding $T(w, m_i, 0)$ and $T(w, m_i, 2^i)$ together, every pair of overlapping segments will be added together to form a new segment of double the size. Invariant \ref{thm:divide-invariant} states that each segment of $T(w, m_i, 0)$ and $T(w, m_i, 2^i) \ll 2^i$ represents the cardinality of a corresponding segment in $w^{(0)}$. Since the cardinality of a bit-string is equal to the sum of its parts, we can interpret each new segment as the cardinality of the corresponding two previous segments combined. Therefore, at the end of the $i$-th iteration of the for-loop, the word $w$ can be interpreted as consisting of bit-string segments of size $2^{i+1}$, where each bit-string-segment represents the cardinality of the corresponding bit-string segments of $w^{(0)}$.
+    %Since the cardinality of a combined bit-string is equal to the cardinality of its parts, we can divide all of the segments into pairs of size $2^{i+1}$ and add them together to form the new pair, which is done by the operation $T(w, m_i, 0) + T(w, m_i, 2^i)$ in constant time if the masks are pre-computed. 
+    % This operation works because $T(w, m_i, 0)$ isolates every other segment of size $2^i$ starting from the first segment and $T(w, m_i, 2^i)$ isolates every other segment of size $2^i$ starting from the second segment.\\
 \end{proof}
-When the algorithm terminates after $\log_2(d)$ iterations, the segments will have size $2^{\log_2{(d)}} = d$ and thus span the entire original word, which means that we have the bit-count of the original word. % TODO: Skriv noget omkring hvad der sker når d ikke er en faktor af 2
+When the algorithm terminates after $\log_2(d)$ iterations, the segments will have size $2^{\log_2{(d)}} = d$ and thus span the entire original word, which means that we have the bit-count of the original word. If $m$ is pre-computed, then each iteration can be performed in constant time, which means that the cardinality of a list of $n$ words can be calculated in $O(n\log_2{(d)})$ time.% TODO: Skriv noget omkring hvad der sker når d ikke er en faktor af 2
+\subsubsection{Example}
+Given the bit-string $w^{(0)}=1101011001010010_2$, we can run the algorithm by hand to find the cardinality. Due to invariant \ref{thm:divide-invariant}, we can regard $w^{(0)}$ as consisting of $d/2^0=16$ sections of size $2^0=1$ as marked by colors:\\
+$$w^{(0)}=\color{blue}1\color{red}1\color{blue}0\color{red}1\color{blue}0\color{red}1\color{blue}1\color{red}0\color{blue}0\color{red}1\color{blue}0\color{red}1\color{blue}0\color{red}0\color{blue}1\color{red}0_{\color{black}2}$$
+At the beginning of the first iteration, we can calculate $m_0$ to be $\dots0101010101010101_2$. This means that $T(w^{(0)}, m_0, 0)=0101010001010000_2$ and $T(w^{(0)}, m_0, 2^0)=0100000100000001_2$.
+We can add them together to get $w^{(1)}$:
+$$w^{(1)}=\color{blue}10\color{red}01\color{blue}01\color{red}01\color{blue}01\color{red}01\color{blue}00\color{red}01_{\color{black}2}$$
+Notice that each section has now doubled in size. Due to invariant \ref{thm:divide-invariant}, each section represents the bit-string cardinality of the corresponding section of $w^{(0)}$. For example, the least significant section $\color{red}01\color{black}_2 = 1_{10}$ represents that the there is 1 bit set in the 2 least significant bits of $w^{(0)}$ (which we can see is true). Continuing the algorithm, we get:
+$$w^{(2)}=\color{blue}0011\color{red}0010\color{blue}0010\color{red}0001\color{black}_2$$
+$$w^{(3)}=\color{blue}00000101\color{red}00000011\color{black}_2$$
+$$w^{(4)}=\color{red}0000000000001000\color{black}_2 = 8_{10}$$
+The algorithm has now terminated, and we can see that $w^{(0)}$ contains 8 bits set, which we can see is true.
+
 % \input{tikz/example1}
 \subsection{Parallelism}
 To introduce parallelism into the algorithm, we must first realize the following: When two segments of $2^i$ bits gets combined, they will not need all of the $2^{i+1}$ bits to represent their sum. It is actually such that the bits used at iteration $i$ is exactly $i+1$.
 \begin{invariant}
     \label{thm:amount-of-bits}
-    At the $i$th iteration of the algorithm, the amount of bits set in a given segment of a word is at most $i+1$.
+    At the end of the $i$th iteration of algorithm \ref{alg:divide-and-conquer-cardinality}, the amount of bits set in a given segment of a word is at most $i+1$.
 \end{invariant}
 \begin{proof}
-    We will prove this by induction. \\
-    At $i=0$, the size of the segments are $2^0 = 1$, which is equal to $i+1$.\\
-    If it is true at iteration $i$, then at iteration $i+1$ the algorithm will add two words of size $i+1$ which creates a word of size $i+2$, which fulfills the loop invariant.
+    \textbf{Base case}: At $i=0$, the size of the segments are $2^0 = 1$, which is equal to $i+1$.\\
+    \textbf{Induction step}: At iteration $i$, the algorithm will add two words of size $2^i$. In the worst case, where all bits are set, each segment in $w^{(i)}$ will have the value $2^{i+1}-1$, which means that each segment in $w^{(i+1)}$ will have the value $2^{i+1}-1 + 2^{i+1}-1 = 2(2^{(i+1)} - 1)$. To find out how many bits is needed to represent the given number, we can calculate $\log_2$ of the expression and round down: $\lfloor \log_2{(2(2^{(i+1)} - 1))}\rfloor=\lfloor 1 + \log_2{(2^{(i+1)}-1)} \rfloor = 1+\lfloor \log_2{(2^{(i+1)}-1)}\rfloor = i + 1$. Therefore, at the end of the $i$th iteration, each section can only have $i+1$ or fewer bits set.
+    %If it is true at iteration $i$, then at iteration $i+1$ the algorithm will add two words of size $i+1$ which creates a word of size $i+2$, which fulfills the loop invariant.
 \end{proof}
-Now, we will introduce a function $l(i)$, which produces the smallest number such that $2^{l(i)} \geq i + 2$. If we use the bit mask $m_{l(i), i+1}$ instead of $m_{i}$, we will get the same result. This also means that we can pack $2^{i-l(i)}$ words into one by utilizing the empty space in each segment.
+Now, we will introduce a function $l(i)$, which produces the smallest non-negative integer such that $2^{l(i)} \geq i + 2$. We can now use the bit-mask $m_{l(i), i+1}$ instead of $m_{i}$, since the segments are guaranteed to be strictly smaller than $2^{l(i)}$. At the end of each iteration, there will be a sequence of $2^{(i+1)-l(i+1)}$ unused bits between each segment, since each segment will have size $2^{(i+1)}$ (invariant \ref{thm:divide-invariant}) but at most use $i+1$ bits (invariant \ref{thm:amount-of-bits}). In the case that $2^{(i+1) - l(i+1)} \geq 2^{l(i+1)}$, this unused sequence can contain a segment from an entirely different word (note that this happens when $l(i)=l(i+1)$). Algorithm \ref{alg:parallel-d-and-c} uses this to efficiently compute the cardinality of all the words in a set $S = \{w_0, \dots w_{n-1}\}$.
 \begin{algorithm}[H]
 \caption{A parallel divide-and-conquer algorithm}\label{alg:parallel-d-and-c}
     \begin{algorithmic}[1]
@@ -78,7 +92,7 @@ Now, we will introduce a function $l(i)$, which produces the smallest number suc
                 \If{$i < 2$}
                     \State $S \gets k'$
                 \Else
-                \If{$l(i) = l(i+1)$}
+                \If{$l(i) = l(i+1)$ AND $S.length > 1$}
                     \For{$j \in [\lceil S.length / 2 \rceil]$}
                     \State $t \gets t \cup \{k'_{2j} + (k'_{2j+1} \ll 2^i)\}$ % TODO: Er det l(i) eller l(i+1)?
                     \EndFor
@@ -121,11 +135,42 @@ The point of the algorithm is to ensure that after every step of the algorithm t
     Furthermore, since we relocated the segments, we can now still extract each original word by performing the operation in equation \ref{eq:extract-from-embed}.\\
     The algorithm will terminate when $i = \log_2(d) - 1$, from which each word will embed $2^{\log_2(d)-l(\log_2(d))}$ of the original words.
 \end{proof}
+
+\subsubsection{Example}
+For the first two iterations of the first for-loop, the algorithm works exactly as algorithm \ref{alg:divide-and-conquer-cardinality}. When $i=2$, lines $17-19$ are hit for the first time, but since the words are $(3)$-packed, there will only be $2^{2-2}=1$ words from $S^{0}$ embedded in each word in $S^{(2)}$. This results in the operation at line $18$ leaving $k'$ unchanged.\\
+When $i=3$, the lines $12-16$ are hit for the first time. This results in words getting pairwise combined. Here is an example of how words in $k'$ for some set $S^{(3)}$ can get merged together (segments of size $2^{l(i)}$ are colored):
+$$k'=$$
+$$\{00000000 \color{red}00001111 \color{black}00000000 \color{red}00001001\color{black}_2, \color{black}0000 0000 \color{blue}0000 1010\color{black}00000000\color{blue}00010000\color{black}_2\}$$
+$$S^{(4)}=\{\color{blue}00001010\color{red}00001111\color{blue}0001 0000 \color{red}0000 1001\color{black}_2\}$$
+Since lines 6-8 of the next iteration of the algorithm will combine segments of size $l(4) = l(3)$, $k'$ will be:
+$$k'=\{\color{black}0000000000000000\color{blue}0001 1010 \color{red}0001 1000\color{black}_2\}$$
+After this iteration, the main for-loop terminates and the final set $S'$ can be constructed to the following:
+$$S'=\{0000000000000000 00000000 \color{red}00011000\color{black}_2, 0000000000000000 0000 0000 \color{blue} 0001 1010\color{black}_2\}$$
+$$=\{ 24_{10}, 26_{10} \}$$
+This means that $S^{(0)}_0$ should contain 24 bits set and $S^{(0)}_1$ should contain 26 bits set.
+% Since this algorithm works best when word sizes are large (e.g. $\log_2(d) > 6$), it can be very cumbersome to hand-run examples. Therefore, this example only uses $d=16$, but still shows how the algorithm can merge multiple words together which also applies for larger word-sizes.\\
+% If we are given set $S^{(0)} = \{w_0^{(0)}, \dots w_3^{(0)}\}$ defined as
+% $$S^{(0)} = $$
+% $$\{1101101010110010_2, 0110101111100101_2, 1110101000101010_2, 0011101010101110_2 \}$$
+% then we can calculate the cardinality of each word in $S^{(0)}$. First, we run through the first two iterations of the algorithm, which are the same as in algorithm \ref{alg:divide-and-conquer-cardinality}.
+% $$S^{(1)} = $$
+% $$\{1001010101100001_2, 0101011010010101_2, 1001010100010101_2, 0010010101011001_2 \}$$
+% $$S^{(2)} = $$
+% $$\{0011001000110001_2, 0010001100110010_2, 0011001000010010_2, 0010001000100011_2 \}$$
+% Then we reach $i=2$ (the third iteration of the algorithm). Since $l(2) = 2$ and $l(3) = 3$, we enter the branch at line 17-19 where we calculate $t_0$ and $t_1$. Since every word is $i = 2$ packed at this point, each word $w \in k'$ will only consist of segments from 1 of the original words, which means that the operation on line $18$ does nothing. Therefore
+% $$S^{(3)} = $$
+% $$\{0000010100000100_2, 0000010100000101_2, 0000 0101 0000 0011_2, 0000 0100 0000 0101_2 \}$$
+% For the last iteration of the algorithm, first $k'$ is calculated (colored for clarity):
+% $$k'= $$
+% $$\{\color{red}00000000 00001001\color{black}_2, \color{blue}0000 0000 0000 1010\color{black}_2, \color{green}0000 0000 0000 1000\color{black}_2, \color{orange}0000 0000 0000 1001\color{black}_2\color{black}\}$$
+% Then we enter line 12-16 of the for-loop which combines the words. Therefore we end up with:
+% $$S^{(4)}=\{\color{blue}0000 1010 \color{red}0000 1001\color{black}_2, \color{orange}0000 1001 \color{green}0000 1000\color{black}_2\}$$
+% Now the for-loop terminates.
 \subsection{Discrepansies}
 In the original article, combining the sections of a word (like we do in algorithm \ref{alg:divide-and-conquer-cardinality} and on line 7 and 14 in algorithm \ref{alg:parallel-d-and-c}) is done with the following operation:
 $$t^{(i+1)}=T(T(t^{(i)}, m_i, 0) + T(t^{(i)}, m_i, 2^i), m_{i+1}, 0)$$
-Here, the algorithm is described as a recurrence, where $t^{(i)}$ is the word $t$ after $i$ iterations. This definition is troublesome since the outermost call to $T$ causes information loss. A counter-example to this is just the word $t^{(0)} = 0\texttt{b}1111$. We can see that this word contains 4 bits set. Using this operation, we can see that 
-$$t^{(1)}=T(T(0\texttt{b}1111, 0\texttt{b}0101, 0) + T(0\texttt{b}1111, 0\texttt{b}0101, 2), 0\texttt{b}0011, 0) = 0\texttt{b}0010$$
+Here, the algorithm is described as a recurrence, where $t^{(i)}$ is the word $t$ after $i$ iterations. This definition is troublesome since the outermost call to $T$ causes information loss. A counter-example to this is just the word $t^{(0)} = 1111_2$. We can see that this word contains 4 bits set. Using this operation, we can see that 
+$$t^{(1)}=T(T(1111_2, 0101_2, 0) + T(1111_2, 0101_2, 2), 0011_2, 0) = 0010_2$$
 The outermost application of the bit mask means that we lose information about the two most significant bits of $t$. If we were to calculate $t^{(2)}$ and thus let the algorithm terminate, we would only have counted half of all the bits!\\
 This is simply solved by removing the outermost call to $T$, since no information will be lost and invariant \ref{thm:divide-invariant} will apply.\\
 Another issue with the original article is that the order of the cardinalities in the final set $S'$ is not consistent with the order of the original set $S^{(0)}$.

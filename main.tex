@@ -30,6 +30,8 @@ natbib=true
 \usepackage{caption}
 \usepackage{subcaption}
 
+\usepackage{xcolor}
+
 \usepackage{tikz}
 
 \usetikzlibrary{matrix,backgrounds}
@@ -82,10 +84,11 @@ natbib=true
 \include{introduction/main}
 \include{theory/main}
 \include{parallel-bit-counting/main}
-\include{methods/main}
-\include{implementation/main}
-\include{results/main}
-\include{discussion/main}
+\section{Implementation}
+\input{methods/main}
+\input{implementation/main}
+\input{results/main}
+\input{discussion/main}
 \include{conclusion/main}
 \setcounter{secnumdepth}{0}
 \include{notation/main}
