@@ -59,7 +59,7 @@ Creating the data structure takes $O(\sum_{A\in \mathcal{F}}|A| \cdot l)$ time a
 To query, we first calculate $l$ sketches of $Q$, $g_0(Q), \dots, g_{l-1}(Q)$, which takes $O(k \cdot l \cdot |Q|)$ time. These sketches can be used to retrieve $l$ candidate sets $\mathcal{M} = \{ A_0, \dots A_{l-1}\}$ from each of the $l$ outermost hash tables. \\
 For each $A\in \mathcal{M}$, the Jaccard similarity can be computed in $O(|Q|)$ time by computing the size of the intersection using the associated hash table to $A$ and computing the size of the union by the inclusion-exclusion principle if the size of $A$ is known.\\
 When an element $A\in \mathcal{M}$ is found such that $J(A,Q) \geq j_2$, the algorithm can return.\\
-This algorithm can therefore query in $O(l\cdot k |Q|\) = O(n^\rho\log_2{(n)}|Q|)$ time.
+This algorithm can therefore query in $O(l\cdot k |Q|) = O(n^\rho\log_2{(n)}|Q|)$ time.
 % Let us try to calculate how many of the candidate sets are so-called ``bad matches'' e.g. sets $A\in \mathcal{F}$ where $A \leq j_2$. Let $\mathcal{F}_{bad} = \{ A \in \mathcal{F} \mid J(A,Q) \leq j_2 \}$. Let $X_i(A) = [g_i(A) = g_i(Q)]$ for $i\in [l]$ and $A \in \mathcal{F}_{bad}$ and $X=\sum_{A \in \mathcal{F}_{bad}}\sum_{i\in [l]}X_i(A)$. Then we can calculate the expected amount of the $l$ sketches that contains a set $A\in \mathcal{F}_{bad}$.
 % $$\mathbb{E}[X] = \mathbb{E}[\sum_{i\in [l]}\sum_{A \in \mathcal{F}_{bad}}X_i(A)] = \sum_{i\in [l]}\sum_{A \in \mathcal{F}_{bad}}\mathbb{E}[X_i(A)]$$
 % Since $\mathcal{G}$ is $(j_1, j_2, 1/n^\rho, 1/n)$-sensitive, then $Pr[g_i(A) = g_i(Q)] \leq 1/n$ when $A\in \mathcal{F}_{bad}$:

@@ -1,5 +1,6 @@
 \section{Parallel Bit Counting}
-In the same article where \citet{fast-similarity-search} presents the improvements for algorithms with an $o(\varepsilon)$ error probability, a parallel algorithm to compute the cardinality of a bit-string is also presented. It is only described by recurrences, and omits implementation details. I will try to describe the same algorithm in a much simpler fashion and prove its correctness and time complexity while doing it. This means that this section is my own interpretation of the algorithm, proofs and analysis described in \cite{fast-similarity-search}.
+In the same article where \citet{fast-similarity-search} presents the improvements for algorithms with an $o(\varepsilon)$ error probability, a parallel algorithm to compute the cardinality of a sequence of bit-strings packed into sequence of words is also presented. It is only described by recurrences, and omits implementation details. I will try to describe the same algorithm in a much simpler fashion and prove its correctness and time complexity while doing it. This means that this section is my own interpretation of the algorithm, proofs and analysis described in \cite{fast-similarity-search}.
+It will furthermore simplify the algorithm by considering the case where $d=w$.\\
 A naive algorithm to perform bit-counting could be described like in algorithm \ref{alg:naive-cardinality}.
 \begin{algorithm}[H]
 \caption{A naive linear time algorithm}\label{alg:naive-cardinality}
