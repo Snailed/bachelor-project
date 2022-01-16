@@ -14,7 +14,7 @@ It is based on the following theorem:
     $$Pr[x\in V \cap W]=\frac{|V\cap W|}{|V \cup W|}= J(V,W)$$
     When we calculate $H(W)$ and $H(V)$, the smallest value of the two will be $H(W\cup V)$. Since we use hash functions, this is essentially equivalent of sampling a random value from $W\cup V$. Assuming no collisions, this value will be in the intersection $W\cap V$ if and only if $H(W)$ and $H(V)$ have picked the same element. This means that the probability of $H(W)=H(V)$ is the same as the probability of picking an element of the intersection from the union, which is $\frac{|V\cap W|}{|V\cup W|}=J(V,W)$.
 \end{proof}
-The MinHash algorithm works like so: First, preprocess each set $A\in \mathcal{F}$ by hashing each coordinate using $k$ universal hash functions picked uniformly at random, saving the smallest value for each hash function as a sketch $S(A)=\langle H_0(A), \dots, H_{k-1}(A)\rangle$.
+The MinHash algorithm works like so: First, pre-process each set $A\in \mathcal{F}$ by hashing each coordinate using $k$ universal hash functions picked uniformly at random, saving the smallest value for each hash function as a sketch $S(A)=\langle H_0(A), \dots, H_{k-1}(A)\rangle$.
 To query a set $Q$, calculate its sketch $S(Q)$ and then calculate $$d(S(A),S(Q))=\frac{1}{k}\sum_{i\in [k]}[H_i(A)=H_i(Q)]$$\\
 We can then derive the expected value of this to be the Jaccard Similarity:
 $$\mathbb{E}[d(S(A),S(Q))]=\mathbb{E}[\frac{1}{k}\sum_{i\in [k]}[H_i(A)=H_i(Q)]]$$
@@ -54,8 +54,8 @@ $$j_2^k\leq j_2 \cdot j_2^{\frac{\log_2(n)}{\log_2(1/j_2)}}=j_2\cdot j_2^{-\frac
 %This has the consequence that both error probabilities ($r_1$ and $r_2$ from definition \ref{thm:sensitive-hash}) are dependent on $1/n$. 
 Now, imagine $g_0, \dots g_{l-1} \in \mathcal{G}$ picked uniformly at random where $l=\lceil n^\rho \rceil$. If we calculate the sketch $g_i(A)$ for each $A\in \mathcal{F}$, $i\in [l]$, we will have $O(n\cdot l)$ sketches where $n=|F|$. This is our LSH data structure. \\
 For each value $i\in [l]$, a hash table should also be created to look up a set stored at index $g_i(Q)$ for some query set $Q$ in constant time.
-Furthermore, each set $A\in \mathcal{F}$ stored in this hashtable should have an associated hash table over its elements.\\
-Creating the data structure takes $O(\sum_{A\in \mathcal{F}}|A| \cdot l)$ time and space during the preprocessing step.\\
+Furthermore, each set $A\in \mathcal{F}$ stored in this hash table should have an associated hash table over its elements.\\
+Creating the data structure takes $O(\sum_{A\in \mathcal{F}}|A| \cdot l)$ time and space during the pre-processing step.\\
 To query, we first calculate $l$ sketches of $Q$, $g_0(Q), \dots, g_{l-1}(Q)$, which takes $O(k \cdot l \cdot |Q|)$ time. These sketches can be used to retrieve $l$ candidate sets $\mathcal{M} = \{ A_0, \dots A_{l-1}\}$ from each of the $l$ outermost hash tables. \\
 For each $A\in \mathcal{M}$, the Jaccard similarity can be computed in $O(|Q|)$ time by computing the size of the intersection using the associated hash table to $A$ and computing the size of the union by the inclusion-exclusion principle if the size of $A$ is known.\\
 When an element $A\in \mathcal{M}$ is found such that $J(A,Q) \geq j_2$, the algorithm can return.\\

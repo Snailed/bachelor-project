@@ -6,8 +6,8 @@
 
 \subsection{Methods}
 % \input{methods/hypothesis}
-For the rest of the project, the main focus will be on showing the practical feasability of the parallel bit-counting algorithm compared to simpler algorithms. 
-Since $d$ needs to be very large for parallelism to affect the results, it can be very hard to compare the algorithms presented in the previous section in a meaningful way if multiple bit-strings should be embedded in any word-sizes found on a standard machine. For the rest of the project, it therefore be assumed that $d=w$, which means that only 1 bit-string will be embedded per word.\\
+For the rest of the project, the main focus will be on showing the practical feasibility of the parallel bit-counting algorithm compared to simpler algorithms. 
+Since $d$ needs to be very large for parallelism to affect the results, it can be very hard to compare the algorithms presented in the previous section in a meaningful way if multiple bit-strings should be embedded in any word sizes found on a standard machine. For the rest of the project, it therefore be assumed that $d=w$, which means that only 1 bit-string will be embedded per word.\\
 We know from the time complexity of the algorithms in the previous section that the parallel algorithm gets theoretically better than the other algorithms as $d$ grows. If we find out that the parallel algorithm is slower than the other algorithms in the case that $d=w$, then we can assume that it is also slower when $d \leq w$. If we however find out that the parallel algorithm is faster, then we might be unable to make any conclusions on the algorithms feasibility, since its usefulness in the filtering step of the querying algorithm relies on its ability to work on words with multiple embedded bit-strings. \\
 A comparison will be made to the \texttt{popcnt} CPU instruction that is implemented on most x64-86 CPUs, which can count the bit-wise cardinality of a word\cite{popcnt}.
 \input{methods/benchmarking}

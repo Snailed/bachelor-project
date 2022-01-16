@@ -16,10 +16,10 @@ For a word $t$ with word-length $w$ packed with $w/d$ bit-strings of size $d = O
 \EndFunction
 \end{algorithmic}
 \end{algorithm}
-This algorithm trivially runs in linear time to the word-size\footnote{For the rest of this project, it is assumed that $w$ is a power of 2.} $w$ of the input word $t$. For $n$ words of size $w$, this algorithm runs in $O(nw)$ time.
+This algorithm trivially runs in linear time to the word size\footnote{For the rest of this project, it is assumed that $w$ is a power of 2.} $w$ of the input word $t$. For $n$ words of size $w$, this algorithm runs in $O(n w)$ time.
 \citet{fast-similarity-search} presents two improvements to this: The first will improve the running time to $O(n\log(d))$ by utilizing a divide-and-conquer technique and the second to $O(n + \log(d))$ time by introducing parallelism. % TODO: FIX THIS
 \subsection{Divide-and-Conquer}
-To explain how divide-and-conquer methods can be used to improve running time, we must first introduce a word-sized bit mask from \cite{fast-similarity-search} that is defined like so:
+To explain how divide-and-conquer methods can be used to improve running time, we must first introduce a word sized bit mask from \cite{fast-similarity-search} that is defined like so:
 $$m_{i,j} = \underbrace{0\dots 0}_{2^{j}-2^{i}}\underbrace{1\dots 1}_{2^i}\dots\underbrace{0\dots 0}_{2^{j}-2^{i}}\underbrace{1\dots 1_2}_{2^i}$$
 where $j > i$ and $j$ and $i$ are non-negative integers. The notation $m_{i}$ is a shorthand for $m_{i, i+1}$ and indicates a mask with an equal amount of 1's and 0's. By computing $t \land m_{i,j}$ for some word $t$ and some integers $i, j$, we can replace every other sub-string of size $2^j-2^i$ in the bit-string with 0's. This will be described as \textit{isolating} segments of size $2^i$.\\
 We will use this in the following operation:
@@ -49,7 +49,6 @@ At the beginning of the $i$th iteration of the algorithm, the word $t^{(i)}$ can
 \begin{proof}
     \textbf{Base case}: When $i=0$, then each bit-string of size $2^0=1$ in $t^{(0)} = t$ will be $1$ if the bit is $1$ and $0$ if the bit is $0$. This proves our base case. \\
     \textbf{Induction step}:
-    %If at step $i$ the word $w^{(i)}$ contains $\frac{d}{2^i}$ segments of size $2^i$, then invariant \ref{thm:divide-invariant} will be upheld if we combine each segment with its neighbor to form a segment of size $2^{i+1}$. 
     At step $i$, invariant \ref{thm:divide-invariant} states that the word $t^{(i)}$ contains $\frac{d}{2^i}$ segments of size $2^i$. The operation $T(t, m_i, 0)$ will then isolate exactly every other segment of size $2^i$. The operation $T(t, m_i, 2^i)$ will isolate the remaining segments and bit-shift them such that the segments align with the segments isolated by $T(t, m_i, 0)$.\\
     By adding $T(t, m_i, 0)$ and $T(t, m_i, 2^i)$ together, every pair of overlapping segments will be added together to form a new segment of double the size. Invariant \ref{thm:divide-invariant} states that each segment of $T(t, m_i, 0)$ and $T(t, m_i, 2^i) \ll 2^i$ represents the cardinality of a corresponding segment in $t^{(0)}$. Since the cardinality of a bit-string is equal to the sum of its parts, we can interpret each new segment as the cardinality of the corresponding two previous segments combined. Therefore, at the end of the $i$-th iteration of the for-loop, the word $t$ can be interpreted as consisting of bit-string segments of size $2^{i+1}$, where each bit-string-segment represents the cardinality of the corresponding bit-string segments of $t^{(0)}$.
     %Since the cardinality of a combined bit-string is equal to the cardinality of its parts, we can divide all of the segments into pairs of size $2^{i+1}$ and add them together to form the new pair, which is done by the operation $T(w, m_i, 0) + T(w, m_i, 2^i)$ in constant time if the masks are pre-computed. 
@@ -88,7 +87,7 @@ Now, we will introduce a function $l(i)$, which produces the smallest non-negati
 \begin{algorithm}[H]
 \caption{A parallel divide-and-conquer algorithm}\label{alg:parallel-d-and-c}
     \begin{algorithmic}[1]
-        \Function{Compute}{$S$, $d$} \Comment{$S$ is the input set, $d$ is the word-size}
+        \Function{Compute}{$S$, $d$} \Comment{$S$ is the input set, $d$ is the word size}
             \State $n \gets S.length$
             \For{$i \in [\log_2(d)]$}
                 \State $k' \gets \{\}$
@@ -135,7 +134,7 @@ The point of the algorithm is to ensure that after every step of the algorithm t
 \begin{proof}
     First, the first two iterations of the loop are run, such that $i=1$. During the first two iterations of the loop, no words are combined since it just uses the naive algorithm, which upholds the invariant because any $2$-packed words embeds $2^{0}=1$ of the original words.\\
     For any iteration where $i\geq 2$, one out of two things can happen. Either, $l(i+1) = l(i)$ (we do not need more bits to describe each segment), or $l(i + 1) = l(i) + 1$ (we need twice the amount of bits to describe each segment).\\
-    In the first case, we will combine the words using bit-shifting. Since every word in $k'$ uses the same amount of bits to represent each segment even though we just combined segments when creating $k'$, there must be an empty space of at least size $2^{l(i+1)}$ in every segment. We can fill out that empty space by adding another word bit-shifted by a factor of 2. % TODO: Find ud af om det er 2^i eller 2^l(i)
+    In the first case, we will combine the words using bit-shifting. Since every word in $k'$ uses the same amount of bits to represent each segment even though we just combined segments when creating $k'$, there must be an empty space of at least size $2^{l(i+1)}$ in every segment. We can fill out that empty space by adding another word bit-shifted by a factor of 2.
     Now, the amount of words embedded is equal to the sum of both of its parts (i.e. has doubled). This upholds the loop invariant since any $(i+1)$-packed word must have twice the amount of words embedded than a $i$-packed word if $l(i+1) = l(i)$ by definition.\\
     In the second case, $l(i + 1) = l(i) + 1$. In this case, we need to relocate our segments that actually use $2^{l(i)}$ bits so they fit into the segments of size $2^i$ bits that were created when creating $k'$.
     The same amount of words have been embedded into each words as before, but as $l(i+1) = l(i) + 1$ a $(i+1)$-packed word should only embed the same amount of words as a $i$-packed word, which upholds the invariant.
@@ -156,7 +155,7 @@ After this iteration, the main for-loop terminates and the final set $S'$ can be
 $$S'=\{0000000000000000 00000000 \color{red}00011000\color{black}_2, 0000000000000000 0000 0000 \color{blue} 0001 1010\color{black}_2\}$$
 $$=\{ 24_{10}, 26_{10} \}$$
 If $d=w$, then this means that $S^{(0)}_0$ should contain 24 bits set and $S^{(0)}_1$ should contain 26 bits set.
-% Since this algorithm works best when word sizes are large (e.g. $\log_2(d) > 6$), it can be very cumbersome to hand-run examples. Therefore, this example only uses $d=16$, but still shows how the algorithm can merge multiple words together which also applies for larger word-sizes.\\
+% Since this algorithm works best when word sizes are large (e.g. $\log_2(d) > 6$), it can be very cumbersome to hand-run examples. Therefore, this example only uses $d=16$, but still shows how the algorithm can merge multiple words together which also applies for larger word sizes.\\
 % If we are given set $S^{(0)} = \{w_0^{(0)}, \dots w_3^{(0)}\}$ defined as
 % $$S^{(0)} = $$
 % $$\{1101101010110010_2, 0110101111100101_2, 1110101000101010_2, 0011101010101110_2 \}$$
@@ -174,7 +173,7 @@ If $d=w$, then this means that $S^{(0)}_0$ should contain 24 bits set and $S^{(0
 % Then we enter line 12-16 of the for-loop which combines the words. Therefore we end up with:
 % $$S^{(4)}=\{\color{blue}0000 1010 \color{red}0000 1001\color{black}_2, \color{orange}0000 1001 \color{green}0000 1000\color{black}_2\}$$
 % Now the for-loop terminates.
-\subsection{Discrepansies}
+\subsection{Discrepancies}
 In the original article, combining the sections of a word (like we do in algorithm \ref{alg:divide-and-conquer-cardinality} and on line 7 and 14 in algorithm \ref{alg:parallel-d-and-c}) is done with the following operation:
 $$t^{(i+1)}=T(T(t^{(i)}, m_i, 0) + T(t^{(i)}, m_i, 2^i), m_{i+1}, 0)$$
 Here, the algorithm is described as a recurrence, where $t^{(i)}$ is the word $t$ after $i$ iterations. This definition is troublesome since the outermost call to $T$ causes information loss. A counter-example to this is just the word $t^{(0)} = 1111_2$. We can see that this word contains 4 bits set. Using this operation, we can see that 
@@ -221,7 +220,7 @@ $$=2n + \sum_{i=2}^{\log_2(d)}\lceil \frac{n}{2^{i-l(i)}} \rceil$$
 Since the last loop iterates over every element of the original set, it must take $O(n)$ time. We can now derive the total running time:
 $$O(n) + 2n + \sum_{i=2}^{\log_2(d)}\lceil \frac{n}{2^{i-l(i)}} \rceil$$
 $$=O(n) + \sum_{i=2}^{\log_2(d)}\lceil n2^{l(i)-i} \rceil$$
-$$\leq O(n) + \sum_{i=2}^{\log_2(d)}(n2^{l(i)-i} + 1)$$
+$$\leq O(n) + \sum_{i=2}^{\log_2(d)}(n 2^{l(i)-i} + 1)$$
 $$\leq O(n + \log(d)) + n\sum_{i=2}^{\log_2(d)}2^{l(i)-i}$$
 Now we use the fact that $l(i)$ is always the smallest number that satisfies $2^{l(i)} \geq i + 2$. Since it is the smallest number, then $2^{l(i)} < 2(i+2)$, which can be proved by contradiction: $2^{l(i)} \geq 2(i+2) \implies 2^{l(i)-1} \geq i+2$, which shows that there is a number that is 1 smaller than $l(i)$ that upholds the bound $2^{l(i)} \geq i + 2$. Therefore $2^{l(i)} < 2(i+2)$. We can now use this fact:
 $$\leq O(n + \log(d)) + n\sum_{i=0}^{\infty}\frac{2(i+2)}{2^{i}} = O(n+\log(d))$$
