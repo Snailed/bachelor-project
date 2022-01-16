@@ -4,7 +4,7 @@
 % Hvilket bibliotek brugte jeg? 
 % Hvor mange gange kørte den? Hvilken data fik den?
 To benchmark the algorithm, two reference implementations were created to be used as a baseline models alongside the CPU instruction. These implementations were based on algorithm \ref{alg:naive-cardinality} and \ref{alg:divide-and-conquer-cardinality}. A list of $2^{24}$ random numbers were to be generated and used as input for each of the algorithms.\\
-The Rust library \texttt{Criterion.rs}\cite{criterion} was used to perform the benchmarking. Criterion.rs was very useful for multiple reasons. 
+The Rust library \texttt{Criterion.rs} \cite{criterion} was used to perform the benchmarking. Criterion.rs was very useful for multiple reasons. 
 \begin{itemize}
     \item First of all, Criterion.rs integrates into standard Rust tooling easily and allows benchmarking on binary code built for production (e.g. with full optimizations and no debugging symbols)
     \item Secondly, Criterion.rs provides a compiler "opaque" functions that makes sure that repeated calls to the same function do not get optimized away.
